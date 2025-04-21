@@ -56,9 +56,6 @@ const nextConfig = {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com',
   },
   
-  // Optimize production builds
-  swcMinify: true,
-  
   // Configure webpack for production
   webpack: (config, { dev, isServer }) => {
     // Production optimizations

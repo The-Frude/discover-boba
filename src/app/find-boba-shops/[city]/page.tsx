@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getShopsByCity, getCities, createSlug } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
@@ -109,10 +110,12 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Filter Sidebar */}
             <div className="lg:w-1/4">
-              <FilterSidebar 
-                tags={allTags} 
-                citySlug={city.slug} 
-              />
+              <Suspense fallback={<div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">Loading filters...</div>}>
+                <FilterSidebar 
+                  tags={allTags} 
+                  citySlug={city.slug} 
+                />
+              </Suspense>
             </div>
             
             {/* Shop Listings */}
@@ -138,13 +141,15 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
               </div>
               
               {/* Pagination */}
-              <Pagination 
-                totalItems={filteredShops.length}
-                itemsPerPage={itemsPerPage}
-                currentPage={currentPage}
-                citySlug={city.slug}
-                selectedTags={selectedTags}
-              />
+              <Suspense fallback={<div className="flex justify-center mt-8">Loading pagination...</div>}>
+                <Pagination 
+                  totalItems={filteredShops.length}
+                  itemsPerPage={itemsPerPage}
+                  currentPage={currentPage}
+                  citySlug={city.slug}
+                  selectedTags={selectedTags}
+                />
+              </Suspense>
               
               {filteredShops.length === 0 && (
                 <div className="text-center py-12">

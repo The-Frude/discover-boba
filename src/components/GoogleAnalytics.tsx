@@ -1,14 +1,14 @@
 'use client';
 
 import Script from 'next/script';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 // Google Analytics measurement ID
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-// Initialize Google Analytics
-const GoogleAnalytics = () => {
+// Analytics tracking component that uses useSearchParams
+const AnalyticsTracking = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -22,6 +22,11 @@ const GoogleAnalytics = () => {
     });
   }, [pathname, searchParams]);
 
+  return null;
+};
+
+// Initialize Google Analytics
+const GoogleAnalytics = () => {
   // Skip rendering if there's no measurement ID
   if (!GA_MEASUREMENT_ID) return null;
 
@@ -46,6 +51,9 @@ const GoogleAnalytics = () => {
           `,
         }}
       />
+      <Suspense fallback={null}>
+        <AnalyticsTracking />
+      </Suspense>
     </>
   );
 };

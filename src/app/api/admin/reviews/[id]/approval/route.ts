@@ -4,8 +4,9 @@ import { updateReviewApproval } from '@/utils/reviews'
 // PUT /api/admin/reviews/:id/approval - Update review approval status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const reviewId = params.id
     const body = await request.json()

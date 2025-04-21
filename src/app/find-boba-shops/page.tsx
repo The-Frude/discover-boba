@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { getCities } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
 

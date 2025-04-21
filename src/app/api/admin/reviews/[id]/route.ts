@@ -4,8 +4,9 @@ import { deleteReview } from '@/utils/reviews'
 // DELETE /api/admin/reviews/:id - Delete a review
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const reviewId = params.id
     const body = await request.json()

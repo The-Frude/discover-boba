@@ -1,0 +1,82 @@
+You are an expert AI web developer. Create a modern, SEO-optimized directory website to help users find Boba tea shops in major cities across the United States. Use the latest stable version of **Next.js**. DO NOT USE REACT. Use the latest stable version of **Next.js**. The website must scale easily as new data is added over time, and must prioritize mobile-first design and SEO performance.
+
+- The site must dynamically generate static pages for each city based on the presence of a CSV file in the `/data` directory.
+
+---
+
+🧱 PROJECT STRUCTURE
+- Use best practices for scalable, maintainable Next.js apps.
+- Structure folders for `components`, `pages`, `utils`, `data`, and `styles`.
+- Include `README.md` to document how new cities should be added (by dropping in a new CSV).
+
+---
+
+🏠 HOMEPAGE
+- Build a modern, responsive hero section with:
+- A header image placeholder, located at images/header-holder.jpg
+- Search bar
+- Basic filter options (city, tag, etc.)
+- Show featured cities or trending tags.
+- Ensure design is mobile-first, fast, and clean.
+
+---
+
+🧋 SHOP CARDS & LISTINGS
+- Each shop should be displayed using a card layout.
+- On card click, link to a dedicated individual listing page (`/boba-shop/[slug]`) for better SEO.
+- Card info: shop name, logo (or placeholder which is in /images/boba-cat.jpeg), location, tags, and short description.
+- Each listing page should include full shop details and social links.
+
+---
+
+🏷️ TAGS, FILTERS & SLUGS
+- Extract usable tags from the `about` field for each shop.
+- Implement a filtering UI by tag and city.
+- Pages and links must use SEO-friendly URLs:
+- `/find-boba-shops/chicago`
+- `/find-boba-shops/chicago/fruity`
+- `/boba-shop/boba-heaven`
+
+---
+
+📄 ADDITIONAL FEATURES
+- Include an **FAQ page** answering common questions about boba and bubble tea.
+- Plan for **Google AdSense ad slots**:
+- Between shop cards
+- Top/bottom of shop pages
+- Sidebar or in-feed (desktop)
+
+---
+
+📌 SEO & AUTOMATION
+- Automatically scan the `/data` folder at build time.
+- Use `getStaticPaths` and `getStaticProps` to dynamically generate:
+- One city page per CSV file
+- One listing page per shop
+- Auto-generate and update `sitemap.xml` and `robots.txt` based on available cities and shops.
+- Use `next/head` to manage meta tags per page (title, description, OG tags).
+- Use internal linking between related tags, shops, and cities.
+
+---
+
+🗺️ MAP INTEGRATION
+- Add a “search by map” feature where useful (e.g. on city pages).
+- Leave a placeholder for Google Maps API key integration.
+
+---
+
+📱 PAGINATION & PERFORMANCE
+- Paginate shop lists when needed for performance and UX.
+- Prioritize mobile-first layout and fast page loads.
+
+---
+
+🧠 CONTEXT WINDOW MANAGEMENT
+If the context token window approaches the limit:
+- Stop at a natural break point.
+- Summarize progress and next steps in a file named `PROGRESS.md` in the project root.
+
+
+
+
+

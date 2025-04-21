@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+    "shopId": "sample-shop-id",
+    "shopSlug": "sample-shop",
+    "userName": "John Doe",
+    "userEmail": "john.doe@example.com",
+    "rating": 5,
+    "comment": "This is the best boba shop I've ever been to! The taro milk tea with boba pearls is absolutely amazing. The staff is friendly and the atmosphere is great. Highly recommend!",
+    "date": "2025-04-15T14:30:00.000Z",
+    "isVerified": true,
+    "isApproved": true
+  },
+  {
+    "id": "2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
+    "shopId": "sample-shop-id",
+    "shopSlug": "sample-shop",
+    "userName": "Jane Smith",
+    "userEmail": "jane.smith@example.com",
+    "rating": 4,
+    "comment": "Great selection of flavors and toppings. The brown sugar milk tea is delicious. The only reason I'm giving 4 stars instead of 5 is because it can get quite crowded during peak hours.",
+    "date": "2025-04-10T10:15:00.000Z",
+    "isVerified": false,
+    "isApproved": true
+  },
+  {
+    "id": "3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
+    "shopId": "sample-shop-id",
+    "shopSlug": "sample-shop",
+    "userName": "Michael Johnson",
+    "userEmail": "michael.johnson@example.com",
+    "rating": 3,
+    "comment": "Decent boba shop. The drinks are good but a bit overpriced compared to other places in the area. The service is quick though.",
+    "date": "2025-04-05T16:45:00.000Z",
+    "isVerified": false,
+    "isApproved": true
+  },
+  {
+    "id": "4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",
+    "shopId": "sample-shop-id",
+    "shopSlug": "sample-shop",
+    "userName": "Emily Davis",
+    "userEmail": "emily.davis@example.com",
+    "rating": 5,
+    "comment": "I love their fruit teas! The passion fruit tea with lychee jelly is my favorite. The shop is clean and the staff is always friendly.",
+    "date": "2025-04-01T12:00:00.000Z",
+    "isVerified": true,
+    "isApproved": true
+  },
+  {
+    "id": "5e6f7g8h-9i0j-1k2l-3m4n-5o6p7q8r9s0t",
+    "shopId": "sample-shop-id",
+    "shopSlug": "sample-shop",
+    "userName": "David Wilson",
+    "userEmail": "david.wilson@example.com",
+    "rating": 2,
+    "comment": "Disappointing experience. The boba pearls were too hard and the tea was too sweet even though I asked for 50% sweetness. Might give it another try in the future.",
+    "date": "2025-03-28T09:30:00.000Z",
+    "isVerified": false,
+    "isApproved": false
+  }
+]

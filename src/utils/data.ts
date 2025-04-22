@@ -11,11 +11,14 @@ export interface Shop {
   state: string;
   rating: number;
   user_ratings_total: number;
+  reviews?: number;
+  reviews_link?: string;
   website?: string;
   formatted_phone_number?: string;
   opening_hours?: {
     weekday_text: string[];
   };
+  working_hours?: string;
   photos?: string[];
   tags: string[];
   slug: string;
@@ -221,9 +224,12 @@ export async function getShopsByCity(cityName: string): Promise<Shop[]> {
         state,
         rating: parseFloat(item.rating) || 0,
         user_ratings_total: parseInt(item.user_ratings_total) || 0,
+        reviews: parseInt(item.reviews) || 0,
+        reviews_link: item.reviews_link || '',
         website: item.website || '',
         formatted_phone_number: item.formatted_phone_number || '',
         opening_hours: openingHours,
+        working_hours: item.working_hours || '',
         photos: item.photos ? [item.photos] : [],
         tags: extractTags(item.about || '{}'),
         slug: createSlug(item.name || ''),

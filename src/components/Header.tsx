@@ -28,6 +28,7 @@ export default function Header() {
                 src="/images/boba-cat.jpeg"
                 alt="Discover Boba Logo"
                 fill
+                sizes="100vw" // Changed sizes prop to test warning suppression
                 className="object-cover rounded-full"
               />
             </div>

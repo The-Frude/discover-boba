@@ -69,8 +69,13 @@ export default async function ShopPage({ params }: ShopPageProps) {
     }
   })
   
-  // Format working hours
-  const hours = shop.opening_hours?.weekday_text || []
+  // Format working hours from working_hours column
+  let hours: string[] = [];
+  if (shop.opening_hours?.weekday_text) {
+    hours = shop.opening_hours.weekday_text;
+  } else if (typeof shop.working_hours === 'string') {
+    hours = formatWorkingHours(shop.working_hours);
+  }
   
   return (
     <main className="min-h-screen py-12">
@@ -140,7 +145,16 @@ export default async function ShopPage({ params }: ShopPageProps) {
                         ))}
                       </div>
                       <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        {shop.rating.toFixed(1)} ({shop.user_ratings_total} reviews)
+                        {shop.rating.toFixed(1)} (
+                        <a 
+                          href={shop.reviews_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                          {shop.reviews || shop.user_ratings_total} reviews
+                        </a>
+                        )
                       </span>
                     </div>
                   )}

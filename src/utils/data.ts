@@ -186,19 +186,44 @@ export async function getShopsByCity(cityName: string): Promise<Shop[]> {
     const rawData = await parseCSV(filePath);
     
     return rawData.map((item: any) => {
-      const { city, state } = extractCityState(item.formatted_address || '');
+      const address = item.full_address || item.formatted_address || '';
+      const { city, state } = extractCityState(address);
+      
+      // Handle both hour formats
+      let openingHours = null;
+      if (item.working_hours) {
+        try {
+          openingHours = typeof item.working_hours === 'string' 
+            ? JSON.parse(item.working_hours)
+            : item.working_hours;
+        } catch (e) {
+          console.error('Error parsing working_hours:', e);
+        }
+      } else if (item.working_hours_old_format) {
+        try {
+          const hoursArray = item.working_hours_old_format.split('|');
+          const hoursObj: Record<string, string> = {};
+          hoursArray.forEach((hour: string) => {
+            const [day, time] = hour.split(':');
+            hoursObj[day] = time;
+          });
+          openingHours = { weekday_text: Object.entries(hoursObj).map(([day, time]) => `${day}: ${time}`) };
+        } catch (e) {
+          console.error('Error parsing working_hours_old_format:', e);
+        }
+      }
       
       return {
         id: item.id || item.place_id || '',
         name: item.name || '',
-        formatted_address: item.formatted_address || '',
+        formatted_address: address,
         city,
         state,
         rating: parseFloat(item.rating) || 0,
         user_ratings_total: parseInt(item.user_ratings_total) || 0,
         website: item.website || '',
         formatted_phone_number: item.formatted_phone_number || '',
-        opening_hours: item.opening_hours ? JSON.parse(item.opening_hours.replace(/'/g, '"')) : null,
+        opening_hours: openingHours,
         photos: item.photos ? [item.photos] : [],
         tags: extractTags(item.about || '{}'),
         slug: createSlug(item.name || ''),

@@ -102,10 +102,19 @@ export default async function ShopPage({ params }: ShopPageProps) {
                     };
                     
                     // Get city name and ensure no trailing comma
-                    const cityName = removeTrailingComma(shop.city || shop.formatted_address.split(',')[0]);
+                    let cityName = shop.city || shop.formatted_address.split(',')[0];
                     
                     // Create URL path with no trailing comma
-                    const cityPath = removeTrailingComma(shop.city ? shop.city.toLowerCase() : createSlug(shop.formatted_address.split(',')[0]));
+                    let cityPath = shop.city ? shop.city.toLowerCase() : createSlug(shop.formatted_address.split(',')[0]);
+
+                    // Correct Washington DC link
+                    if (cityName === "Washington" || shop.formatted_address.includes("Washington DC")) {
+                      cityPath = "washingtondc";
+                      cityName = "Washington";
+                    }
+
+                    cityName = removeTrailingComma(cityName);
+                    cityPath = removeTrailingComma(cityPath);
                     
                     return (
                       <Link href={`/find-boba-shops/${cityPath}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">

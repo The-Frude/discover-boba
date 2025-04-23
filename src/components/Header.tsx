@@ -25,7 +25,7 @@ export default function Header() {
           <Link href="/" className="flex items-center">
             <div className="relative h-10 w-10 mr-3">
               <Image
-                src="/images/boba-cat.jpeg"
+                src="/images/bobacat-logo-med.png"
                 alt="Discover Boba Logo"
                 fill
                 sizes="100vw" // Changed sizes prop to test warning suppression

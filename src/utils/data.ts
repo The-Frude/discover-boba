@@ -22,6 +22,9 @@ export interface Shop {
   photos?: string[];
   tags: string[];
   slug: string;
+  email?: string;
+  menu_link?: string;
+  order_links?: string;
 }
 
 export interface City {
@@ -233,6 +236,9 @@ export async function getShopsByCity(cityName: string): Promise<Shop[]> {
         photos: item.photos ? [item.photos] : [],
         tags: extractTags(item.about || '{}'),
         slug: createSlug(item.name || ''),
+        email: item.email_1 || '',
+        menu_link: item.menu_link || '',
+        order_links: item.order_links || '',
       };
     });
   } catch (error) {

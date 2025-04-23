@@ -180,6 +180,52 @@ The following environment variables are used:
 - `NEXT_PUBLIC_CSP_IMG_SRC`: CSP img-src directive
 - `NEXT_PUBLIC_CSP_SCRIPT_SRC`: CSP script-src directive
 
+## Data Structure
+
+### Shop Data Headers
+The CSV files in the `data/` directory contain the following key headers:
+- `name`: Name of the boba shop
+- `formatted_address`: Full address of the shop
+- `city`, `state`: Location information
+- `rating`: Numerical rating (e.g., 4.7)
+- `user_ratings_total`: Number of reviews
+- `reviews_link`: Link to Google reviews
+- `website`: Shop's website URL
+- `formatted_phone_number`: Contact phone number
+- `email_1`: Primary email address
+- `working_hours`: Operating hours in JSON format
+- `working_hours_old_format`: Alternative format for hours
+- `menu_link`: URL to the shop's menu
+- `order_links`: URL for online ordering
+- `about`: Description and features in JSON format
+- `photos`: Image URLs
+
+## Recent Updates
+
+### UI Modifications (April 2025)
+
+#### Contact Information and Layout (April 23, 2025)
+- **Combined Hours and Contact Info**: Moved contact information into the same box as hours of operation
+  - For desktop: Side-by-side layout with a divider
+  - For mobile: Stacked layout for better readability
+  - Removed redundant Contact Information section from the sidebar
+- **Enhanced Contact Information**:
+  - Added colored icons for phone, email, and address
+  - Made all contact information (address, phone, email) clickable links
+- **Updated Action Buttons**:
+  - Replaced "Directions" button with "Order Now" and/or "See Menu" buttons when available
+  - Order and menu links are pulled from the CSV data
+- **Social Media Sharing**:
+  - Added sharing buttons to individual shop pages in the header section
+  - Added sharing buttons to shop cards in the bottom-right corner
+  - Included options for Facebook, Twitter, and email sharing
+
+#### Previous Updates
+- **Breadcrumb Navigation Fix**: Added a helper function to remove trailing commas from city names and URL paths in breadcrumb navigation on individual shop pages. This fixes the 404 errors that were occurring when users clicked on city names with trailing commas.
+- **Image Containers**: Temporarily hidden image containers in both individual shop pages and shop cards. This is a temporary measure until a decision is made about including shop images.
+  - In `src/app/boba-shop/[slug]/page.tsx`: Removed the image container at the top of individual shop pages.
+  - In `src/components/ShopCard.tsx`: Hidden the image container while preserving the rating display.
+
 ## Conclusion
 
 Discover Boba is a well-structured Next.js application that follows modern web development practices. It uses a file-based data approach, which is suitable for its current scale. The application has a clean component structure, consistent styling with Tailwind CSS, and integrations for monitoring, analytics, and security.

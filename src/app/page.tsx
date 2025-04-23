@@ -24,7 +24,7 @@ export default async function Home() {
             Discover the Best Boba Tea Shops
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-            Find your perfect bubble tea experience in cities across the United States
+            Find the perfect bubble tea experience in your city
           </p>
           
           {/* Search Bar */}
@@ -98,10 +98,15 @@ export default async function Home() {
             <div className="md:w-1/2">
               <h2 className="text-3xl font-bold mb-4">What is Boba Tea?</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Boba tea, also known as bubble tea, is a Taiwanese drink that combines tea with milk, fruit, and chewy tapioca pearls that sit at the bottom of the cup.
+              Boba tea, also lovingly called bubble tea, is a delightfully sweet and chewy Taiwanese tea-based drink. Imagine a refreshing mix of tea, milk (or dairy-free alternatives!), sweeteners, and those wonderfully squishy tapioca pearls – the "boba" or "bubbles." Plus you'll find endless variations, from fruity flavors like mango and strawberry to richer options like taro and brown sugar.
               </p>
+              <h2 className="text-3xl font-bold mb-4">Why is boba tea so popular?</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Since its creation in the 1980s, boba tea has become a global phenomenon with countless flavors and variations to explore.
+              It's more than just a drink; it's an experience! The combination of flavors and textures is unique and satisfying. Plus, it's customizable to your taste – you can adjust the sweetness, ice level, and toppings
+              </p>
+              <h2 className="text-3xl font-bold mb-4">Looking for the best boba tea near you?</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              You've come to the right place! Our directory helps you discover top-rated boba shops in your city, so you can easily find your next favorite bubble tea fix. Explore menus, read reviews, and find the perfect spot to satisfy your boba cravings. Start your search today and unlock a world of delicious boba possibilities!
               </p>
               <Link href="/faq" className="btn-primary inline-block">
                 Learn More

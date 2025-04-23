@@ -94,9 +94,25 @@ export default async function ShopPage({ params }: ShopPageProps) {
                   <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                   </svg>
-                  <Link href={`/find-boba-shops/${shop.city ? shop.city.toLowerCase() : createSlug(shop.formatted_address.split(',')[0])}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">
-                    {shop.city || shop.formatted_address.split(',')[0]}
-                  </Link>
+                  {/* Helper function to remove trailing commas */}
+                  {(() => {
+                    // Remove trailing comma from a string
+                    const removeTrailingComma = (str: string) => {
+                      return str.endsWith(',') ? str.slice(0, -1) : str;
+                    };
+                    
+                    // Get city name and ensure no trailing comma
+                    const cityName = removeTrailingComma(shop.city || shop.formatted_address.split(',')[0]);
+                    
+                    // Create URL path with no trailing comma
+                    const cityPath = removeTrailingComma(shop.city ? shop.city.toLowerCase() : createSlug(shop.formatted_address.split(',')[0]));
+                    
+                    return (
+                      <Link href={`/find-boba-shops/${cityPath}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">
+                        {cityName}
+                      </Link>
+                    );
+                  })()}
                 </div>
               </li>
               <li aria-current="page">
@@ -116,19 +132,50 @@ export default async function ShopPage({ params }: ShopPageProps) {
           <div className="lg:col-span-2">
             {/* Shop Header */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-8">
-              <div className="h-64 relative">
-                <OptimizedImage
-                  src={shop.photos?.[0] || "/images/boba-cat.jpeg"}
-                  alt={shop.name}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 66vw"
-                />
-              </div>
+              {/* Image container hidden temporarily */}
               <div className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                  <h1 className="text-3xl font-bold mb-2 md:mb-0">{shop.name}</h1>
+                  <div className="flex flex-col">
+                    <h1 className="text-3xl font-bold mb-2">{shop.name}</h1>
+                    
+                    {/* Social Media Sharing */}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Share:</span>
+                      <a 
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        aria-label="Share on Facebook"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                        </svg>
+                      </a>
+                      <a 
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${shop.name} on Discover Boba!`)}&url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-200"
+                        aria-label="Share on Twitter"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                        </svg>
+                      </a>
+                      <a 
+                        href={`mailto:?subject=${encodeURIComponent(`Check out ${shop.name} on Discover Boba!`)}&body=${encodeURIComponent(`I found this great boba shop on Discover Boba: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                        aria-label="Share via Email"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                  
                   {shop.rating > 0 && (
                     <div className="flex items-center">
                       <div className="flex items-center mr-2">
@@ -193,33 +240,113 @@ export default async function ShopPage({ params }: ShopPageProps) {
                       Call
                     </a>
                   )}
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.formatted_address)}`}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="btn-secondary"
-                  >
-                    Directions
-                  </a>
+                  {shop.order_links && (
+                    <a 
+                      href={shop.order_links} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn-primary"
+                    >
+                      Order Now
+                    </a>
+                  )}
+                  {shop.menu_link && (
+                    <a 
+                      href={shop.menu_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn-secondary"
+                    >
+                      See Menu
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
             
-            {/* Hours */}
+            {/* Hours and Contact Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Hours of Operation</h2>
-              {hours.length > 0 ? (
-                <ul className="space-y-2">
-                  {hours.map((day, index) => (
-                    <li key={index} className="flex">
-                      <span className="font-medium w-32">{day.split(': ')[0]}:</span>
-                      <span className="text-gray-600 dark:text-gray-300">{day.split(': ')[1]}</span>
+              <div className="flex flex-col md:flex-row md:justify-between">
+                <div className="md:w-1/2 mb-6 md:mb-0 md:pr-4">
+                  <h2 className="text-xl font-bold mb-4">Hours of Operation</h2>
+                  {hours.length > 0 ? (
+                    <ul className="space-y-2">
+                      {hours.map((day, index) => (
+                        <li key={index} className="flex">
+                          <span className="font-medium w-32">{day.split(': ')[0]}:</span>
+                          <span className="text-gray-600 dark:text-gray-300">{day.split(': ')[1]}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600 dark:text-gray-300">Hours information not available</p>
+                  )}
+                </div>
+                
+                <div className="md:w-1/2 md:pl-4 md:border-l md:border-gray-200 dark:md:border-gray-700">
+                  <h2 className="text-xl font-bold mb-4">Contact Information</h2>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.formatted_address)}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary-600 dark:text-primary-400 hover:underline"
+                      >
+                        {shop.formatted_address}
+                      </a>
                     </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600 dark:text-gray-300">Hours information not available</p>
-              )}
+                    
+                    {shop.formatted_phone_number && (
+                      <li className="flex items-start">
+                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                        <a 
+                          href={`tel:${shop.formatted_phone_number.replace(/\D/g, '')}`}
+                          className="text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                          {shop.formatted_phone_number}
+                        </a>
+                      </li>
+                    )}
+                    
+                    {shop.email && (
+                      <li className="flex items-start">
+                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <a 
+                          href={`mailto:${shop.email}`}
+                          className="text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                          {shop.email}
+                        </a>
+                      </li>
+                    )}
+                    
+                    {shop.website && (
+                      <li className="flex items-start">
+                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+                        </svg>
+                        <a 
+                          href={shop.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                          {shop.website.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
             </div>
             
             {/* Map */}
@@ -237,42 +364,6 @@ export default async function ShopPage({ params }: ShopPageProps) {
           
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            {/* Contact Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Contact Information</h2>
-              <ul className="space-y-3">
-                {shop.formatted_phone_number && (
-                  <li className="flex items-start">
-                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">{shop.formatted_phone_number}</span>
-                  </li>
-                )}
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">{shop.formatted_address}</span>
-                </li>
-                {shop.website && (
-                  <li className="flex items-start">
-                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
-                    </svg>
-                    <a 
-                      href={shop.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary-600 dark:text-primary-400 hover:underline"
-                    >
-                      {shop.website.replace(/^https?:\/\/(www\.)?/, '')}
-                    </a>
-                  </li>
-                )}
-              </ul>
-            </div>
-            
             {/* Features */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">Features</h2>

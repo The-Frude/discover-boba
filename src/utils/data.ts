@@ -170,7 +170,7 @@ export async function getCities(): Promise<City[]> {
         slug: createSlug(cityName),
         state: firstShop?.state || '',
         shopCount: shops.length,
-        image: '/images/boba-cat.jpeg', // Default image
+        image: `/images/${cityName}.jpg`, // Use city-specific image
       });
     } catch (error) {
       console.error(`Error processing ${cityName}:`, error);

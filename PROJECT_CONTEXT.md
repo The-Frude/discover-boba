@@ -204,6 +204,14 @@ The CSV files in the `data/` directory contain the following key headers:
 
 ### UI Modifications (April 2025)
 
+#### City Images and SEO Improvements (April 24, 2025)
+- **City-Specific Images**: Updated the application to use city-specific images from the `/public/images` folder
+  - Modified the `getCities` function in `src/utils/data.ts` to use images named after each city
+  - Images are now displayed in city cards on the main listing page and as header images on city pages
+- **SEO Optimization**: 
+  - Updated city page headers to include an H1 tag that says "Boba Shops in [city name]" over the city image
+  - This improves search engine optimization for city-specific pages
+
 #### Contact Information and Layout (April 23, 2025)
 - **Combined Hours and Contact Info**: Moved contact information into the same box as hours of operation
   - For desktop: Side-by-side layout with a divider

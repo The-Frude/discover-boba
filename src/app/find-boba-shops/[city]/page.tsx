@@ -96,7 +96,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         </div>
         <div className="container-custom relative z-10 text-center text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Boba Tea Shops in {city.name}, {city.state}
+            Boba Shops in {city.name}
           </h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
             Discover {filteredShops.length} bubble tea shops in {city.name}

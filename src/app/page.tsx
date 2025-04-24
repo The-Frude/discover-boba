@@ -114,7 +114,7 @@ export default async function Home() {
             </div>
             <div className="md:w-1/2 relative h-[300px] md:h-[400px] w-full">
               <OptimizedImage
-                src="/images/boba-cat.jpeg"
+                src="/images/boba-friends.png"
                 alt="Boba Tea Varieties"
                 fill
                 className="object-cover rounded-lg"

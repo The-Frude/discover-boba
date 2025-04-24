@@ -62,7 +62,7 @@ export default function OptimizedImage({
       !isLoading ? 'blur-0' : ''
     } ${className || ''} object-cover`,
     onLoad: () => setIsLoading(false),
-    unoptimized: imageSrc.startsWith('/images/') ? false : undefined, // Ensure local images are optimized
+    unoptimized: true, // Ensure local images are not optimized
     ...props, // Spread remaining props first
   }
 

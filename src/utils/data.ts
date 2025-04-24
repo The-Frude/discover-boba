@@ -165,12 +165,25 @@ export async function getCities(): Promise<City[]> {
       const shops = await getShopsByCity(cityName);
       const firstShop = shops[0];
       
+      let imagePath = `/images/${cityName}.jpg`; // Default path
+      if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.jpg`))) {
+        imagePath = `/images/${cityName}.jpg`;
+      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.JPG`))) {
+        imagePath = `/images/${cityName}.JPG`;
+      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.jpeg`))) {
+        imagePath = `/images/${cityName}.jpeg`;
+      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.PNG`))) {
+        imagePath = `/images/${cityName}.PNG`;
+      } else {
+        imagePath = `/images/boba-cat.jpeg`; // Fallback image
+      }
+
       cities.push({
         name: cityName,
         slug: createSlug(cityName),
         state: firstShop?.state || '',
         shopCount: shops.length,
-        image: `/images/${cityName}.jpg`, // Use city-specific image
+        image: imagePath, // Use city-specific image
       });
     } catch (error) {
       console.error(`Error processing ${cityName}:`, error);

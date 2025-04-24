@@ -10,7 +10,7 @@ export function generateCSP(): string {
     "'self' https://www.google-analytics.com https://*.sentry.io";
   
   const imgSrc = process.env.NEXT_PUBLIC_CSP_IMG_SRC || 
-    "'self' data: https://maps.googleapis.com https://*.googleusercontent.com";
+    "'self' data: https://maps.googleapis.com https://*.googleusercontent.com https://*.vercel.app https://discoverboba.com";
   
   const scriptSrc = process.env.NEXT_PUBLIC_CSP_SCRIPT_SRC || 
     "'self' 'unsafe-inline' https://maps.googleapis.com https://www.googletagmanager.com";

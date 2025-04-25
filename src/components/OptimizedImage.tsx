@@ -58,11 +58,10 @@ export default function OptimizedImage({
     src: imageSrc,
     alt: alt,
     // Combine the transition class with the passed className
-    className: `transition-opacity duration-500 blur-sm ${
-      !isLoading ? 'blur-0' : ''
-    } ${className || ''} object-cover`,
+    className: `transition-opacity duration-500 ${className || ''} object-cover`,
     onLoad: () => setIsLoading(false),
-    unoptimized: true, // Ensure local images are not optimized
+    unoptimized: false,
+    quality: 85,
     ...props, // Spread remaining props first
   }
 

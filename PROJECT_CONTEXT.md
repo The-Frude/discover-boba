@@ -204,6 +204,24 @@ The CSV files in the `data/` directory contain the following key headers:
 
 ### UI Modifications (April 2025)
 
+#### Breadcrumb Navigation Fix for New York Shops (April 28, 2025)
+- **Issue Fixed**: Resolved an issue where the breadcrumb for New York shops displayed "York" instead of "New York"
+- **Borough Handling**: Added special case handling for New York boroughs (Queens, Brooklyn, etc.) to ensure they link to the New York city page
+- **Implementation**: Updated the breadcrumb generation logic in `src/app/boba-shop/[slug]/page.tsx` to detect New York shops based on multiple criteria:
+  - City name is "York"
+  - City path is "york"
+  - City name is one of the New York boroughs (Queens, Brooklyn, Bronx, Manhattan, Staten Island)
+  - Address contains "New York" or "NY"
+- **User Experience**: Ensures consistent navigation for all New York shops, regardless of how the address is formatted in the data
+
+#### Image Optimization Overhaul (April 25, 2025)
+- Implemented Next.js native image optimization with Sharp processing
+- Added prebuild script to generate WebP variants (320w, 640w, 1024w, 1536w)
+- Updated OptimizedImage component with quality settings (85) and srcset support
+- Migrated all images to modern WebP format with fallbacks
+- Configured automatic image optimization in next.config.mjs
+- Added documentation to PROJECT_CONTEXT.md
+
 #### City Images and SEO Improvements (April 24, 2025)
 - **City-Specific Images**: Updated the application to use city-specific images from the `/public/images` folder
   - Modified the `getCities` function in `src/utils/data.ts` to use images named after each city

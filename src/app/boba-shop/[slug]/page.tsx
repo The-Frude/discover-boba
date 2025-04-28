@@ -113,6 +113,17 @@ export default async function ShopPage({ params }: ShopPageProps) {
                       cityName = "Washington";
                     }
 
+                    // Special case for New York and its boroughs
+                    const nyBoroughs = ['Queens', 'Brooklyn', 'Bronx', 'Manhattan', 'Staten Island'];
+                    if (cityName === 'York' || 
+                        cityPath === 'york' || 
+                        nyBoroughs.includes(cityName) || 
+                        shop.formatted_address.includes('New York') || 
+                        shop.formatted_address.includes('NY')) {
+                      cityName = 'New York';
+                      cityPath = 'new-york';
+                    }
+
                     cityName = removeTrailingComma(cityName);
                     cityPath = removeTrailingComma(cityPath);
                     

@@ -13,7 +13,7 @@ export function generateCSP(): string {
     "'self' data: https://maps.googleapis.com https://*.googleusercontent.com https://*.vercel.app https://discoverboba.com";
   
   const scriptSrc = process.env.NEXT_PUBLIC_CSP_SCRIPT_SRC || 
-    "'self' 'unsafe-inline' https://maps.googleapis.com https://www.googletagmanager.com https://pagead2.googlesyndication.com";
+    "'self' 'unsafe-inline' https://maps.googleapis.com https://www.googletagmanager.com";
   
   // Build the CSP string
   const csp = [

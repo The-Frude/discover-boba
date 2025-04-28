@@ -4,7 +4,6 @@ import { Inter, Poppins } from 'next/font/google'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
-import GoogleAdsense from '@/components/GoogleAdsense'
 
 const inter = Inter({ 
   subsets: ['latin'], 
@@ -23,6 +22,9 @@ export const metadata: Metadata = {
   title: 'Discover Boba - Find the Best Boba Tea Shops',
   description: 'Discover the best boba tea shops in major cities across the United States. Find your perfect bubble tea experience with our comprehensive directory.',
   keywords: 'boba, bubble tea, boba shops, bubble tea shops, boba tea, milk tea, tapioca, pearls',
+  other: {
+    'google-adsense-account': 'ca-pub-2397860526597645',
+  },
 }
 
 export default function RootLayout({
@@ -34,7 +36,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <GoogleAnalytics />
-        <GoogleAdsense />
         <Header />
         {children}
         <Footer />

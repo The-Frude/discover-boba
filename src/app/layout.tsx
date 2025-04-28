@@ -4,6 +4,7 @@ import { Inter, Poppins } from 'next/font/google'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import GoogleAdsense from '@/components/GoogleAdsense'
 
 const inter = Inter({ 
   subsets: ['latin'], 
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <GoogleAnalytics />
+        <GoogleAdsense />
         <Header />
         {children}
         <Footer />

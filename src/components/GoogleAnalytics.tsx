@@ -5,7 +5,7 @@ import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 // Google Analytics measurement ID
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const GA_MEASUREMENT_ID = 'G-6GPJT52PB0';
 
 // Analytics tracking component that uses useSearchParams
 const AnalyticsTracking = () => {
@@ -27,15 +27,13 @@ const AnalyticsTracking = () => {
 
 // Initialize Google Analytics
 const GoogleAnalytics = () => {
-  // Skip rendering if there's no measurement ID
-  if (!GA_MEASUREMENT_ID) return null;
-
   return (
     <>
-      {/* Global Site Tag (gtag.js) - Google Analytics */}
+      {/* Google tag (gtag.js) */}
       <Script
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        src="https://www.googletagmanager.com/gtag/js?id=G-6GPJT52PB0"
+        async
       />
       <Script
         id="gtag-init"
@@ -45,9 +43,7 @@ const GoogleAnalytics = () => {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', {
-              page_path: window.location.pathname,
-            });
+            gtag('config', 'G-6GPJT52PB0');
           `,
         }}
       />

@@ -204,6 +204,16 @@ The CSV files in the `data/` directory contain the following key headers:
 
 ### UI Modifications (April 2025)
 
+#### Breadcrumb Navigation Fix for All City Suburbs (April 28, 2025)
+- **Issue Fixed**: Resolved an issue where the breadcrumb for shops in suburbs displayed the suburb name instead of the main city name
+- **Implementation**: Enhanced the breadcrumb generation logic in `src/app/boba-shop/[slug]/page.tsx` to map suburbs to their main cities:
+  - Created a comprehensive mapping of suburbs to their main cities for all supported cities
+  - Added special handling for cities with the same name in different states (e.g., Arlington in VA vs TX)
+  - Implemented a two-step check that first looks for exact suburb name matches, then checks if the address contains the suburb
+  - Maintained the existing special case handling for New York boroughs and Washington DC
+- **User Experience**: Ensures consistent navigation for all shops, regardless of whether they're located in the city proper or a suburb
+- **Maintainability**: Used an array-based approach to avoid duplicate key issues with cities that share the same name
+
 #### Breadcrumb Navigation Fix for New York Shops (April 28, 2025)
 - **Issue Fixed**: Resolved an issue where the breadcrumb for New York shops displayed "York" instead of "New York"
 - **Borough Handling**: Added special case handling for New York boroughs (Queens, Brooklyn, etc.) to ensure they link to the New York city page

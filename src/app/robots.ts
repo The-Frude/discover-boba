@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/_next/'],
+      disallow: ['/api/', '/_next/', '/admin/'],
     },
-    sitemap: 'https://discover-boba.example.com/sitemap.xml',
+    sitemap: 'https://www.discoverboba.com/sitemap.xml',
   }
 }

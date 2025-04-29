@@ -31,8 +31,11 @@ export default function ContactForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     
+    console.log('Form data:', formData);
+    
     // Validate form
     if (!formData.name || !formData.email || !formData.message) {
+      console.log('Validation failed:', { name: !!formData.name, email: !!formData.email, message: !!formData.message });
       setFormStatus({
         submitted: true,
         success: false,
@@ -41,35 +44,66 @@ export default function ContactForm() {
       return
     }
     
-    // In a real application, you would send the form data to a server
-    // For now, we'll simulate a successful submission
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('Submitting form data:', JSON.stringify(formData));
       
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: '',
-      })
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      console.log('Response status:', response.status);
       
-      // Show success message
-      setFormStatus({
-        submitted: true,
-        success: true,
-        message: 'Thank you for your message! We will get back to you soon.'
-      })
-    } catch (error) {
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+        
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+        });
+
+        setFormStatus({
+          submitted: true,
+          success: true,
+          message: 'Thank you for your message! We will get back to you soon.',
+        });
+      } else {
+        console.error('Response not OK:', response.status);
+        let errorMessage = 'There was an error submitting your message. Please try again.';
+        
+        try {
+          const errorData = await response.json();
+          console.error('Error data:', errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+        }
+        
+        setFormStatus({
+          submitted: true,
+          success: false,
+          message: errorMessage,
+        });
+      }
+    } catch (error: any) {
+      console.error('Fetch error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       setFormStatus({
         submitted: true,
         success: false,
-        message: 'There was an error submitting your message. Please try again.'
-      })
+        message: error.message || 'There was an error submitting your message. Please try again.',
+      });
     }
   }
-  
+
   const subjectOptions = [
     { value: '', label: 'Select a subject' },
     { value: 'general', label: 'General Inquiry' },

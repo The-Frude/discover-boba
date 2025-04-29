@@ -86,6 +86,12 @@ const nextConfig = {
     if (!dev) {
       config.optimization.minimize = true;
     }
+
+    // Configure markdown file handling
+    config.module.rules.push({
+      test: /\.md$/,
+      use: 'raw-loader'
+    });
     
     return config;
   },

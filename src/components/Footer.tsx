@@ -94,13 +94,13 @@ export default function Footer() {
             &copy; {currentYear} Discover Boba. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <Link href="#" className="text-gray-400 hover:text-white text-sm">
+            <Link href="/privacy-policy" className="text-gray-400 hover:text-white text-sm">
               Privacy Policy
             </Link>
-            <Link href="#" className="text-gray-400 hover:text-white text-sm">
+            <Link href="/terms-of-service" className="text-gray-400 hover:text-white text-sm">
               Terms of Service
             </Link>
-            <Link href="#" className="text-gray-400 hover:text-white text-sm">
+            <Link href="/cookies-policy" className="text-gray-400 hover:text-white text-sm">
               Cookie Policy
             </Link>
           </div>

@@ -204,6 +204,14 @@ The CSV files in the `data/` directory contain the following key headers:
 
 ### UI Modifications (April 2025)
 
+#### Content Security Policy Fix for Images (April 29, 2025)
+- **Issue Fixed**: Resolved an issue where images were not displaying on the local deployment after adding new pages for privacy policy, terms of service, and cookies policy
+- **Root Cause**: The Content Security Policy (CSP) settings in the `.env` file were missing domains needed for the site's own images
+- **Implementation**: Updated the `NEXT_PUBLIC_CSP_IMG_SRC` environment variable in both `.env` and `.env.example` files to include all required domains:
+  - Added `https://*.vercel.app` and `https://discoverboba.com` to the allowed image sources
+  - These domains were already included in the default fallback value in `src/utils/csp.ts`, but were being overridden by the incomplete value in the `.env` file
+- **Impact**: All images now display correctly across the site, including the logo, hero images, city images, and content images
+
 #### Breadcrumb Navigation Fix for All City Suburbs (April 28, 2025)
 - **Issue Fixed**: Resolved an issue where the breadcrumb for shops in suburbs displayed the suburb name instead of the main city name
 - **Implementation**: Enhanced the breadcrumb generation logic in `src/app/boba-shop/[slug]/page.tsx` to map suburbs to their main cities:

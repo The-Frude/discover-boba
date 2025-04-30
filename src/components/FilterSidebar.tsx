@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface FilterSidebarProps {
   tags: string[]
@@ -16,10 +16,10 @@ export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
   // Get currently selected tags from URL
   const selectedTagsParam = searchParams.get('tags')
   const initialSelectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
-  
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags)
-  const [isExpanded, setIsExpanded] = useState(false)
-  
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
+  const [isTagListExpanded, setIsTagListExpanded] = useState(false); // Renamed for clarity
+  const [isMobileFilterVisible, setIsMobileFilterVisible] = useState(false); // State for mobile visibility
+
   // Group tags by category (simplified approach)
   const groupedTags: Record<string, string[]> = {
     'Service Options': [],
@@ -56,26 +56,45 @@ export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
   const applyFilters = () => {
     if (selectedTags.length > 0) {
       router.push(`/find-boba-shops/${citySlug}?tags=${selectedTags.join(',')}`)
-    } else {
-      router.push(`/find-boba-shops/${citySlug}`)
     }
-  }
-  
+    setIsMobileFilterVisible(false); // Collapse after applying
+  };
+
   // Clear filters
   const clearFilters = () => {
-    setSelectedTags([])
-    router.push(`/find-boba-shops/${citySlug}`)
-  }
-  
+    setSelectedTags([]);
+    router.push(`/find-boba-shops/${citySlug}`);
+    setIsMobileFilterVisible(false); // Collapse after clearing
+  };
+
   // Display only the first 10 tags by default
-  const displayedTags = isExpanded ? tags : tags.slice(0, 10)
-  
+  // const displayedTags = isTagListExpanded ? tags : tags.slice(0, 10); // Keep original logic if needed, but seems unused now
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold">Filters</h3>
-        <button 
-          onClick={clearFilters}
+      {/* --- Mobile Toggle Button --- */}
+      <button
+        onClick={() => setIsMobileFilterVisible(!isMobileFilterVisible)}
+        className="md:hidden w-full btn-secondary mb-4 flex justify-between items-center"
+        aria-expanded={isMobileFilterVisible}
+        aria-controls="filter-content"
+      >
+        <span>Filter Results</span>
+        {/* Add a simple chevron icon */}
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 transition-transform ${isMobileFilterVisible ? 'rotate-180' : ''}`}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {/* --- Filter Content Wrapper --- */}
+      <div
+        id="filter-content"
+        className={`${isMobileFilterVisible ? 'block' : 'hidden'} md:block`} // Logic for visibility
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">Filters</h3>
+          <button
+            onClick={clearFilters}
           className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
         >
           Clear All
@@ -107,15 +126,9 @@ export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
         )
       ))}
       
-      {tags.length > 10 && (
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-sm text-primary-600 dark:text-primary-400 hover:underline mt-2"
-        >
-          {isExpanded ? 'Show Less' : 'Show More'}
-        </button>
-      )}
-      
+      {/* Removed the old "Show More/Less" button as filters are now grouped */}
+      {/* If needed, similar logic could be applied within each category */}
+
       <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={applyFilters}
@@ -124,6 +137,7 @@ export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
           Apply Filters
         </button>
       </div>
+      </div> {/* End of filter-content wrapper */}
     </div>
-  )
+  );
 }

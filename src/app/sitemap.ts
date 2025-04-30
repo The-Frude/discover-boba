@@ -46,6 +46,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/about-us`,
+      lastModified: new Date(), // Use current date for now
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
   ]
   
   // Get all cities

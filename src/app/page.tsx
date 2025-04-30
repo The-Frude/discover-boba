@@ -8,7 +8,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[70vh] min-h-[500px] flex items-center justify-center">
+      <section className="relative h-[42vh] md:h-[70vh] min-h-[300px] md:min-h-[500px] flex items-center justify-center">
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
@@ -27,7 +27,7 @@ export default async function Home() {
             Find the perfect bubble tea experience in your city
           </p>
           
-          {/* Search Bar */}
+          {/* Search Bar - Commented out
           <form 
             action="/search" 
             method="get"
@@ -47,6 +47,7 @@ export default async function Home() {
               </button>
             </div>
           </form>
+          */}
         </div>
       </section>
 

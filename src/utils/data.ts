@@ -194,7 +194,7 @@ export async function getCities(): Promise<City[]> {
 }
 
 // Function to get shops by city
-export async function getShopsByCity(cityName: string): Promise<Shop[]> {
+export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promise<Shop[]> {
   const filePath = path.join(process.cwd(), 'data', `${cityName}.csv`);
   
   if (!fs.existsSync(filePath)) {
@@ -253,6 +253,13 @@ export async function getShopsByCity(cityName: string): Promise<Shop[]> {
         menu_link: item.menu_link || '',
         order_links: item.order_links || '',
       };
+    }).sort((a, b) => {
+      switch(sortBy) {
+        case 'rating': return b.rating - a.rating;
+        case 'reviews': return b.user_ratings_total - a.user_ratings_total;
+        case 'name': return a.name.localeCompare(b.name);
+        default: return b.rating - a.rating;
+      }
     });
   } catch (error) {
     console.error(`Error getting shops for ${cityName}:`, error);

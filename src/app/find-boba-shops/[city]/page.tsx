@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
 import { getShopsByCity, getCities, createSlug } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
@@ -8,6 +9,7 @@ import FilterSidebar from '@/components/FilterSidebar'
 import CityMapView from '@/components/CityMapView'
 import Pagination from '@/components/Pagination'
 import OptimizedImage from '@/components/OptimizedImage'
+import JumpToMapButton from '@/components/JumpToMapButton'
 
 interface CityPageProps {
   params: {
@@ -16,11 +18,13 @@ interface CityPageProps {
   searchParams: {
     page?: string
     tags?: string
+    sort?: string
   }
 }
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
-  const { city: citySlug } = params
+  const paramsData = await Promise.resolve(params)
+  const { city: citySlug } = paramsData
   const cities = await getCities()
   const city = cities.find(c => c.slug === citySlug)
   
@@ -48,7 +52,8 @@ export async function generateStaticParams() {
 
 export default async function CityPage({ params, searchParams }: CityPageProps) {
   // Ensure params is properly awaited
-  const { city: citySlug } = params
+  const paramsData = await Promise.resolve(params)
+  const { city: citySlug } = paramsData
   const cities = await getCities()
   const city = cities.find(c => c.slug === citySlug)
   
@@ -56,14 +61,15 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
     notFound()
   }
   
-  // Get all shops for this city
-  const allShops = await getShopsByCity(city.name)
+  // Handle tag filtering - ensure searchParams is properly awaited
+  const searchParamsData = await Promise.resolve(searchParams)
+  
+  // Get all shops for this city with optional sorting
+  const allShops = await getShopsByCity(city.name, searchParamsData?.sort || 'rating')
   
   // Extract all unique tags from shops
   const allTags = [...new Set(allShops.flatMap(shop => shop.tags))]
-  
-  // Handle tag filtering - ensure searchParams is properly awaited
-  const selectedTagsParam = searchParams?.tags || ''
+  const selectedTagsParam = searchParamsData?.tags || ''
   const selectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
   
   // Filter shops by selected tags if any
@@ -73,7 +79,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   
   // Pagination
   const itemsPerPage = 10 // Number of shops per page
-  const currentPage = searchParams?.page ? parseInt(searchParams.page) : 1
+  const currentPage = searchParamsData?.page ? parseInt(searchParamsData.page) : 1
   
   // Calculate pagination
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -124,14 +130,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
                 <h2 className="text-2xl font-bold">
                   {filteredShops.length} Shops Found
                 </h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 dark:text-gray-300">Sort by:</span>
-                  <select className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-1">
-                    <option value="rating">Rating</option>
-                    <option value="reviews">Reviews</option>
-                    <option value="name">Name</option>
-                  </select>
-                </div>
+                <JumpToMapButton />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -165,10 +164,23 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       </section>
       
       {/* Map Section */}
-      <section className="py-12 bg-white dark:bg-gray-800">
+      <section id="map-section" className="py-12 bg-white dark:bg-gray-800">
         <div className="container-custom">
           <h2 className="text-2xl font-bold mb-6">Find Boba Shops on the Map</h2>
-          <CityMapView shops={filteredShops} cityName={city.name} />
+          <ErrorBoundary 
+            fallback={
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-6 text-center">
+                <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
+                  Map failed to load
+                </h3>
+                <p className="text-red-700 dark:text-red-300">
+                  We couldn't load the map view. Please try refreshing the page.
+                </p>
+              </div>
+            }
+          >
+            <CityMapView shops={filteredShops} cityName={city.name} />
+          </ErrorBoundary>
         </div>
       </section>
     </main>

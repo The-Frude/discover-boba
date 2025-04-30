@@ -61,6 +61,7 @@ export default function Header() {
             >
               Contact
             </Link>
+          {/* Search form commented out
           <form 
             onSubmit={(e: FormEvent) => {
               e.preventDefault()
@@ -90,6 +91,7 @@ export default function Header() {
               </svg>
             </button>
           </form>
+          */}
           </nav>
           
           {/* Mobile Menu Button */}
@@ -112,6 +114,7 @@ export default function Header() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Search form commented out
             <form 
               onSubmit={(e: FormEvent) => {
                 e.preventDefault()
@@ -142,6 +145,7 @@ export default function Header() {
                 </svg>
               </button>
             </form>
+            */}
             <nav className="flex flex-col space-y-4">
               <Link 
                 href="/" 

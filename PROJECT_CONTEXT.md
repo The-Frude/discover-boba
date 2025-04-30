@@ -285,6 +285,19 @@ The JSON files in the `data/reviews/` directory contain arrays of review objects
 
 ## Recent Updates
 
+### UI Improvements and Search Bar Removal (April 30, 2025)
+- **Changes Implemented**:
+  - Commented out search bars in the header and hero section to simplify the interface
+  - Reduced the front page hero height on mobile by 40% (from 70vh to 42vh) for better mobile experience
+  - Replaced the "Sort by" dropdown on city pages with a "Jump to Map" button that smoothly scrolls to the map section
+- **Implementation Details**:
+  - Modified `src/components/Header.tsx` to comment out search forms in both desktop and mobile navigation
+  - Updated `src/app/page.tsx` to comment out the hero search form and adjust hero height with responsive classes
+  - Enhanced `src/app/find-boba-shops/[city]/page.tsx` to add an id to the map section
+  - Created a new client component `src/components/JumpToMapButton.tsx` to handle the interactive scroll behavior
+  - Fixed a React Server Component constraint by moving the onClick handler to a dedicated Client Component
+- **Impact**: Improves user experience by simplifying the interface, optimizing mobile display, and providing easier navigation to the map section
+
 ### Mobile Filter Sidebar Enhancement (April 30, 2025)
 - **Feature**: Improved the mobile user experience on city listing pages (`/find-boba-shops/[city]`) by making the filter sidebar collapsible.
 - **Implementation**:

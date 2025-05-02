@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const requiredFields = ['shopId', 'shopSlug', 'userName', 'userEmail', 'rating', 'comment']
+    const requiredFields = ['shopSlug', 'user_name', 'user_email', 'rating', 'comment']
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -37,10 +37,9 @@ export async function POST(request: NextRequest) {
     
     // Add the review
     const newReview = await addReview({
-      shopId: body.shopId,
-      shopSlug: body.shopSlug,
-      userName: body.userName,
-      userEmail: body.userEmail,
+      shop_slug: body.shopSlug,
+      user_name: body.user_name,
+      user_email: body.user_email,
       rating: body.rating,
       comment: body.comment,
     })
@@ -81,7 +80,7 @@ export async function GET(request: NextRequest) {
     const reviews = await getReviewsByShopSlug(shopSlug)
     
     // Only return approved reviews to the client
-    const approvedReviews = reviews.filter(review => review.isApproved)
+    const approvedReviews = reviews.filter(review => review.is_approved)
     
     return NextResponse.json(approvedReviews)
   } catch (error) {

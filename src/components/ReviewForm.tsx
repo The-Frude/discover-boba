@@ -10,8 +10,8 @@ interface ReviewFormProps {
 
 export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps) {
   const [formData, setFormData] = useState({
-    userName: '',
-    userEmail: '',
+    user_name: '',
+    user_email: '',
     rating: 5,
     comment: '',
   })
@@ -40,7 +40,7 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
     e.preventDefault()
     
     // Validate form
-    if (!formData.userName || !formData.userEmail || !formData.comment) {
+    if (!formData.user_name || !formData.user_email || !formData.comment) {
       setFormStatus({
         submitting: false,
         submitted: true,
@@ -52,7 +52,7 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
     
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.userEmail)) {
+    if (!emailRegex.test(formData.user_email)) {
       setFormStatus({
         submitting: false,
         submitted: true,
@@ -75,10 +75,9 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          shopId: shop.id,
           shopSlug: shop.slug,
-          userName: formData.userName,
-          userEmail: formData.userEmail,
+          user_name: formData.user_name,
+          user_email: formData.user_email,
           rating: formData.rating,
           comment: formData.comment,
         }),
@@ -91,8 +90,8 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
       
       // Reset form
       setFormData({
-        userName: '',
-        userEmail: '',
+        user_name: '',
+        user_email: '',
         rating: 5,
         comment: '',
       })
@@ -128,14 +127,14 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="user_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            id="userName"
-            name="userName"
-            value={formData.userName}
+            id="user_name"
+            name="user_name"
+            value={formData.user_name}
             onChange={handleChange}
             required
             disabled={formStatus.submitting}
@@ -144,14 +143,14 @@ export default function ReviewForm({ shop, onReviewSubmitted }: ReviewFormProps)
         </div>
         
         <div>
-          <label htmlFor="userEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="user_email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
-            id="userEmail"
-            name="userEmail"
-            value={formData.userEmail}
+            id="user_email"
+            name="user_email"
+            value={formData.user_email}
             onChange={handleChange}
             required
             disabled={formStatus.submitting}

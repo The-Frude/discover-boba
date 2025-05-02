@@ -22,6 +22,16 @@ export const metadata: Metadata = {
   title: 'Discover Boba - Find the Best Boba Tea Shops',
   description: 'Discover the best boba tea shops in major cities across the United States. Find your perfect bubble tea experience with our comprehensive directory.',
   keywords: 'boba, bubble tea, boba shops, bubble tea shops, boba tea, milk tea, tapioca, pearls',
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ]
+  },
+  manifest: '/site.webmanifest',
   other: {
     'google-adsense-account': 'ca-pub-2397860526597645',
   },

@@ -95,8 +95,8 @@ export default function AdminReviewsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          shopSlug: review.shopSlug,
-          isApproved: !review.isApproved,
+          shopSlug: review.shop_slug,
+          is_approved: !review.is_approved,
         }),
       })
       
@@ -106,19 +106,19 @@ export default function AdminReviewsPage() {
       
       // Update the local state
       setReviews(prev => {
-        const updatedReviews = [...prev[review.shopSlug]]
+        const updatedReviews = [...prev[review.shop_slug]]
         const reviewIndex = updatedReviews.findIndex(r => r.id === review.id)
         
         if (reviewIndex !== -1) {
           updatedReviews[reviewIndex] = {
             ...updatedReviews[reviewIndex],
-            isApproved: !updatedReviews[reviewIndex].isApproved,
+            is_approved: !updatedReviews[reviewIndex].is_approved,
           }
         }
         
         return {
           ...prev,
-          [review.shopSlug]: updatedReviews,
+          [review.shop_slug]: updatedReviews,
         }
       })
     } catch (error) {
@@ -141,7 +141,7 @@ export default function AdminReviewsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          shopSlug: review.shopSlug,
+          shopSlug: review.shop_slug,
         }),
       })
       
@@ -151,11 +151,11 @@ export default function AdminReviewsPage() {
       
       // Update the local state
       setReviews(prev => {
-        const updatedReviews = prev[review.shopSlug].filter(r => r.id !== review.id)
+        const updatedReviews = prev[review.shop_slug].filter(r => r.id !== review.id)
         
         return {
           ...prev,
-          [review.shopSlug]: updatedReviews,
+          [review.shop_slug]: updatedReviews,
         }
       })
     } catch (error) {
@@ -244,8 +244,8 @@ export default function AdminReviewsPage() {
                   {reviews[selectedShop].map((review) => (
                     <tr key={review.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{review.userName}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{review.userEmail}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{review.user_name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{review.user_email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{review.rating} / 5</div>
@@ -257,16 +257,16 @@ export default function AdminReviewsPage() {
                         <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(review.date)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${review.isApproved ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}`}>
-                          {review.isApproved ? 'Approved' : 'Not Approved'}
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${review.is_approved ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}`}>
+                          {review.is_approved ? 'Approved' : 'Not Approved'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleApprovalToggle(review)}
-                          className={`mr-2 ${review.isApproved ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' : 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300'}`}
+                          className={`mr-2 ${review.is_approved ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' : 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300'}`}
                         >
-                          {review.isApproved ? 'Unapprove' : 'Approve'}
+                          {review.is_approved ? 'Unapprove' : 'Approve'}
                         </button>
                         <button
                           onClick={() => handleDelete(review)}

@@ -7,7 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate:shops": "node scripts/migrate-shops.mjs",
+    "migrate:reviews": "node scripts/migrate-reviews.mjs",
+    "migrate:validate": "node scripts/validate-migration.mjs",
+    "migrate:rollback": "node scripts/rollback-migration.mjs",
+    "migrate": "npm run migrate:shops && npm run migrate:reviews && npm run migrate:validate"
   },
   "keywords": [
     "boba",
@@ -19,6 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/nextjs": "^9.13.0",
+    "@supabase/supabase-js": "^2.49.4",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
@@ -27,10 +33,12 @@
     "@upstash/redis": "^1.34.8",
     "autoprefixer": "^10.4.14",
     "csv-parser": "^3.2.0",
+    "dotenv": "^16.5.0",
     "eslint": "^9.25.0",
     "eslint-config-next": "^15.3.1",
     "express-rate-limit": "^7.5.0",
     "next": "^15.3.1",
+    "pg": "^8.15.6",
     "postcss": "^8.4.23",
     "raw-loader": "^4.0.2",
     "react": "^19.1.0",
@@ -42,5 +50,8 @@
     "tailwindcss": "^3.3.0",
     "typescript": "^5.8.3",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.58.1"
   }
 }

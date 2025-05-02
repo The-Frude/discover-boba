@@ -95,8 +95,8 @@ export default function ReviewsList({ shopSlug }: ReviewsListProps) {
           <div className="flex justify-between items-start mb-2">
             <div>
               <div className="flex items-center mb-1">
-                <span className="font-semibold text-gray-800 dark:text-gray-200 mr-2">{review.userName}</span>
-                {review.isVerified && (
+                <span className="font-semibold text-gray-800 dark:text-gray-200 mr-2">{review.user_name}</span>
+                {review.is_verified && (
                   <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs px-2 py-0.5 rounded-full">
                     Verified
                   </span>

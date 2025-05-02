@@ -14,8 +14,9 @@ interface ShopPageProps {
 }
 
 export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
-  const { slug } = params
-  const shop = await getShopBySlug(slug)
+  // Await params before accessing its properties
+  const awaitedParams = await params;
+  const shop = await getShopBySlug(awaitedParams.slug);
   
   if (!shop) {
     return {
@@ -41,8 +42,9 @@ export async function generateStaticParams() {
 }
 
 export default async function ShopPage({ params }: ShopPageProps) {
-  const { slug } = params
-  const shop = await getShopBySlug(slug)
+  // Await params before accessing its properties
+  const awaitedParams = await params;
+  const shop = await getShopBySlug(awaitedParams.slug);
   
   if (!shop) {
     notFound()
@@ -73,7 +75,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   let hours: string[] = [];
   if (shop.opening_hours?.weekday_text) {
     hours = shop.opening_hours.weekday_text;
-  } else if (typeof shop.working_hours === 'string') {
+  } else if (shop.working_hours) {
     hours = formatWorkingHours(shop.working_hours);
   }
   

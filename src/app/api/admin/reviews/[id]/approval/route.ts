@@ -12,9 +12,9 @@ export async function PUT(
     const body = await request.json()
     
     // Validate required fields
-    if (!body.shopSlug || body.isApproved === undefined) {
+    if (!body.shopSlug || body.is_approved === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: shopSlug and isApproved' },
+        { error: 'Missing required fields: shopSlug and is_approved' },
         { status: 400 }
       )
     }
@@ -22,7 +22,7 @@ export async function PUT(
     // In a real application, we would verify the user is an admin here
     
     // Update the review approval status
-    const success = await updateReviewApproval(body.shopSlug, reviewId, body.isApproved)
+    const success = await updateReviewApproval(body.shopSlug, reviewId, body.is_approved)
     
     if (!success) {
       return NextResponse.json(

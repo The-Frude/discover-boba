@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import csvParser from 'csv-parser'
-import { Readable } from 'stream'
+import { supabase } from './supabase';
 
 export interface Shop {
   id: string;
@@ -18,13 +17,16 @@ export interface Shop {
   opening_hours?: {
     weekday_text: string[];
   };
-  working_hours?: string;
+  working_hours?: any;
   photos?: string[];
   tags: string[];
   slug: string;
   email?: string;
   menu_link?: string;
   order_links?: string;
+  is_premium?: boolean;
+  featured_until?: string;
+  featured_logo?: string;
 }
 
 export interface City {
@@ -33,19 +35,6 @@ export interface City {
   state: string;
   shopCount: number;
   image?: string;
-}
-
-// Function to parse CSV data
-export async function parseCSV(filePath: string): Promise<any[]> {
-  const results: any[] = [];
-  
-  return new Promise((resolve, reject) => {
-    fs.createReadStream(filePath)
-      .pipe(csvParser())
-      .on('data', (data: any) => results.push(data))
-      .on('end', () => resolve(results))
-      .on('error', (error: Error) => reject(error));
-  });
 }
 
 // Function to extract tags from the about field
@@ -125,12 +114,19 @@ export function extractCityState(formattedAddress: string): { city: string; stat
 }
 
 // Function to format working hours
-export function formatWorkingHours(workingHours: string): string[] {
+export function formatWorkingHours(workingHours: any): string[] {
   try {
     if (!workingHours) return [];
     
-    // Parse the JSON data
-    const hoursData = JSON.parse(workingHours.replace(/'/g, '"'));
+    // If workingHours is already an object
+    if (typeof workingHours === 'object') {
+      return Object.entries(workingHours).map(([day, hours]) => {
+        return `${day}: ${hours}`;
+      });
+    }
+    
+    // If workingHours is a string, parse it
+    const hoursData = JSON.parse(typeof workingHours === 'string' ? workingHours.replace(/'/g, '"') : workingHours);
     
     // Format the hours
     return Object.entries(hoursData).map(([day, hours]) => {
@@ -152,19 +148,36 @@ export function createSlug(text: string): string {
 
 // Function to get all cities
 export async function getCities(): Promise<City[]> {
-  const dataDir = path.join(process.cwd(), 'data');
-  const files = fs.readdirSync(dataDir).filter(file => file.endsWith('.csv'));
-  
-  const cities: City[] = [];
-  
-  for (const file of files) {
-    const cityName = path.basename(file, '.csv');
-    const filePath = path.join(dataDir, file);
-    
-    try {
-      const shops = await getShopsByCity(cityName);
-      const firstShop = shops[0];
+  try {
+    // Get all unique cities from the shops table
+    const { data: cityData, error } = await supabase
+      .from('shops')
+      .select('city, state')
+      .order('city');
       
+    if (error) {
+      console.error('Error fetching cities:', error);
+      return [];
+    }
+    
+    // Count shops per city and create city objects
+    const cities: City[] = [];
+    const cityMap = new Map<string, { count: number, state: string }>();
+    
+    // Group by city and count shops
+    for (const shop of cityData) {
+      const cityName = shop.city;
+      if (!cityMap.has(cityName)) {
+        cityMap.set(cityName, { count: 1, state: shop.state });
+      } else {
+        const current = cityMap.get(cityName)!;
+        cityMap.set(cityName, { count: current.count + 1, state: current.state });
+      }
+    }
+    
+    // Create city objects
+    for (const [cityName, data] of cityMap.entries()) {
+      // Check for city image
       let imagePath = `/images/${cityName}.jpg`; // Default path
       if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.jpg`))) {
         imagePath = `/images/${cityName}.jpg`;
@@ -177,90 +190,62 @@ export async function getCities(): Promise<City[]> {
       } else {
         imagePath = `/images/boba-cat.jpeg`; // Fallback image
       }
-
+      
       cities.push({
         name: cityName,
         slug: createSlug(cityName),
-        state: firstShop?.state || '',
-        shopCount: shops.length,
-        image: imagePath, // Use city-specific image
+        state: data.state,
+        shopCount: data.count,
+        image: imagePath,
       });
-    } catch (error) {
-      console.error(`Error processing ${cityName}:`, error);
     }
+    
+    return cities;
+  } catch (error) {
+    console.error('Error getting cities:', error);
+    return [];
   }
-  
-  return cities;
 }
 
 // Function to get shops by city
 export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promise<Shop[]> {
-  const filePath = path.join(process.cwd(), 'data', `${cityName}.csv`);
-  
-  if (!fs.existsSync(filePath)) {
-    return [];
-  }
-  
   try {
-    const rawData = await parseCSV(filePath);
+    // Determine sort order
+    let sortField = 'rating';
+    let ascending = false;
     
-    return rawData.map((item: any) => {
-      const address = item.full_address || item.formatted_address || '';
-      const { city, state } = extractCityState(address);
+    switch(sortBy) {
+      case 'rating': 
+        sortField = 'rating';
+        ascending = false;
+        break;
+      case 'reviews': 
+        sortField = 'user_ratings_total';
+        ascending = false;
+        break;
+      case 'name': 
+        sortField = 'name';
+        ascending = true;
+        break;
+      default: 
+        sortField = 'rating';
+        ascending = false;
+    }
+    
+    // Add premium sorting (premium shops first, then by selected sort)
+    const { data, error } = await supabase
+      .from('shops')
+      .select('*')
+      .eq('city', cityName)
+      .order('is_premium', { ascending: false })
+      .order(sortField, { ascending });
       
-      // Handle both hour formats
-      let openingHours = null;
-      if (item.working_hours) {
-        try {
-          openingHours = typeof item.working_hours === 'string' 
-            ? JSON.parse(item.working_hours)
-            : item.working_hours;
-        } catch (e) {
-          console.error('Error parsing working_hours:', e);
-        }
-      } else if (item.working_hours_old_format) {
-        try {
-          const hoursArray = item.working_hours_old_format.split('|');
-          const hoursObj: Record<string, string> = {};
-          hoursArray.forEach((hour: string) => {
-            const [day, time] = hour.split(':');
-            hoursObj[day] = time;
-          });
-          openingHours = { weekday_text: Object.entries(hoursObj).map(([day, time]) => `${day}: ${time}`) };
-        } catch (e) {
-          console.error('Error parsing working_hours_old_format:', e);
-        }
-      }
-      
-      return {
-        id: item.id || item.place_id || '',
-        name: item.name || '',
-        formatted_address: address,
-        city,
-        state,
-        rating: parseFloat(item.rating) || 0,
-        user_ratings_total: parseInt(item.user_ratings_total) || 0,
-        reviews: parseInt(item.reviews) || 0,
-        reviews_link: item.reviews_link || '',
-        website: item.website || '',
-        formatted_phone_number: item.formatted_phone_number || '',
-        opening_hours: openingHours,
-        working_hours: item.working_hours || '',
-        photos: item.photos ? [item.photos] : [],
-        tags: extractTags(item.about || '{}'),
-        slug: createSlug(item.name || ''),
-        email: item.email_1 || '',
-        menu_link: item.menu_link || '',
-        order_links: item.order_links || '',
-      };
-    }).sort((a, b) => {
-      switch(sortBy) {
-        case 'rating': return b.rating - a.rating;
-        case 'reviews': return b.user_ratings_total - a.user_ratings_total;
-        case 'name': return a.name.localeCompare(b.name);
-        default: return b.rating - a.rating;
-      }
-    });
+    if (error) {
+      console.error(`Error getting shops for ${cityName}:`, error);
+      return [];
+    }
+    
+    return data || [];
   } catch (error) {
     console.error(`Error getting shops for ${cityName}:`, error);
     return [];
@@ -269,39 +254,51 @@ export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promi
 
 // Function to get a shop by slug
 export async function getShopBySlug(slug: string): Promise<Shop | null> {
-  const dataDir = path.join(process.cwd(), 'data');
-  const files = fs.readdirSync(dataDir).filter(file => file.endsWith('.csv'));
-  
-  for (const file of files) {
-    const cityName = path.basename(file, '.csv');
-    const shops = await getShopsByCity(cityName);
-    
-    const shop = shops.find(shop => shop.slug === slug);
-    if (shop) {
-      return shop;
+  try {
+    const { data, error } = await supabase
+      .from('shops')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+      
+    if (error) {
+      console.error(`Error getting shop with slug ${slug}:`, error);
+      return null;
     }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error getting shop with slug ${slug}:`, error);
+    return null;
   }
-  
-  return null;
 }
 
 // Function to get all tags across all shops
 export async function getAllTags(): Promise<string[]> {
-  const dataDir = path.join(process.cwd(), 'data');
-  const files = fs.readdirSync(dataDir).filter(file => file.endsWith('.csv'));
-  
-  const allTags = new Set<string>();
-  
-  for (const file of files) {
-    const cityName = path.basename(file, '.csv');
-    const shops = await getShopsByCity(cityName);
+  try {
+    const { data, error } = await supabase
+      .from('shops')
+      .select('tags');
+      
+    if (error) {
+      console.error('Error getting tags:', error);
+      return [];
+    }
     
-    shops.forEach(shop => {
-      shop.tags.forEach(tag => {
-        allTags.add(tag);
-      });
+    // Flatten and deduplicate tags
+    const allTags = new Set<string>();
+    
+    data.forEach(shop => {
+      if (shop.tags) {
+        shop.tags.forEach((tag: string) => {
+          allTags.add(tag);
+        });
+      }
     });
+    
+    return Array.from(allTags);
+  } catch (error) {
+    console.error('Error getting tags:', error);
+    return [];
   }
-  
-  return Array.from(allTags);
 }

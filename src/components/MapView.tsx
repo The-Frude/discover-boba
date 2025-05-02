@@ -10,7 +10,8 @@ interface MapViewProps {
 declare global {
   interface Window {
     google: any
-    initMap: () => void
+    initMap?: () => void // Make optional as it's dynamically defined
+    __googleMapsScriptLoading?: boolean // Flag to track script loading
   }
 }
 
@@ -21,76 +22,133 @@ export default function MapView({ address, name }: MapViewProps) {
   useEffect(() => {
     // Load Google Maps script
     const loadGoogleMapsScript = () => {
-      if (typeof window.google === 'undefined') {
-        // Use the environment variable for the API key
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
-        const script = document.createElement('script')
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`
-        script.async = true
-        script.defer = true
-        document.head.appendChild(script)
-        
-        // Define the callback function
-        window.initMap = () => {
-          initializeMap()
-        }
+      // Check if script is already loading or loaded
+      if (typeof window.google !== 'undefined') {
+        initializeMap()
+        return () => {} // No cleanup needed if already loaded
+      }
+      
+      if (window.__googleMapsScriptLoading) {
+        // Script is already being loaded, wait for callback
+        const checkGoogleMaps = setInterval(() => {
+          if (typeof window.google !== 'undefined') {
+            clearInterval(checkGoogleMaps)
+            initializeMap()
+          }
+        }, 100)
         
         return () => {
-          // Clean up
-          window.initMap = () => {}
-          document.head.removeChild(script)
+          clearInterval(checkGoogleMaps)
         }
-      } else {
-        // Google Maps already loaded
+      }
+
+      window.__googleMapsScriptLoading = true // Set flag
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+      const scriptId = 'google-maps-script'
+      
+      // Check if script tag already exists (e.g., from previous mount)
+      if (document.getElementById(scriptId)) {
+         // If script exists but google object isn't ready, rely on callback
+         return () => { window.__googleMapsScriptLoading = false }
+      }
+
+      const script = document.createElement('script')
+      script.id = scriptId
+      // Include 'marker' library for AdvancedMarkerElement
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap&libraries=marker`
+      script.async = true
+      script.defer = true
+      
+      // Define the callback function *before* appending script
+      window.initMap = () => {
+        console.log('Google Maps script loaded via callback.')
+        window.__googleMapsScriptLoading = false // Reset flag
         initializeMap()
+        // Clean up callback function from window scope after it executes
+        delete window.initMap 
+      }
+      
+      script.onerror = () => {
+        console.error('Google Maps script failed to load.')
+        window.__googleMapsScriptLoading = false // Reset flag on error
+      }
+
+      document.head.appendChild(script)
+
+      // Return cleanup function
+      return () => {
+        // Clean up callback if component unmounts before script loads
+        if (window.initMap) {
+          delete window.initMap
+        }
       }
     }
     
     // Initialize the map
-    const initializeMap = () => {
-      if (!mapRef.current || typeof window.google === 'undefined') return
+    const initializeMap = async () => {
+      if (!mapRef.current || typeof window.google === 'undefined' || !window.google.maps) {
+        console.log('Map initialization prerequisites not met.');
+        return;
+      }
       
-      // For demonstration purposes, we'll use a geocoding service
-      // In a real application, you would store and use the actual coordinates
-      const geocoder = new window.google.maps.Geocoder()
-      
-      geocoder.geocode({ address }, (results: any, status: any) => {
-        if (status === 'OK' && results[0]) {
-          const position = results[0].geometry.location
-          
-          const mapOptions = {
-            center: position,
-            zoom: 15,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
+      try {
+        // Ensure marker library is loaded
+        const { Map } = await window.google.maps.importLibrary("maps") as google.maps.MapsLibrary;
+        const { AdvancedMarkerElement } = await window.google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
+        const { Geocoder } = await window.google.maps.importLibrary("geocoding") as google.maps.GeocodingLibrary;
+        
+        // For demonstration purposes, we'll use a geocoding service
+        const geocoder = new Geocoder();
+        
+        geocoder.geocode({ address }, (results: any, status: any) => {
+          if (status === 'OK' && results[0]) {
+            const position = results[0].geometry.location
+            
+            const mapOptions = {
+              center: position,
+              zoom: 15,
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: false,
+              mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
+            }
+            
+            // Create the map
+            mapInstanceRef.current = new Map(mapRef.current!, mapOptions)
+            
+            // Add an Advanced Marker
+            const marker = new AdvancedMarkerElement({
+              position,
+              map: mapInstanceRef.current,
+              title: name,
+            });
+          } else {
+            console.error(`Geocode was not successful for "${address}": ${status}`)
+            
+            // Display a fallback message in the map container
+            if (mapRef.current) {
+              mapRef.current.innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                  <p class="text-gray-500 dark:text-gray-400">
+                    Unable to load map for this location
+                  </p>
+                </div>
+              `
+            }
           }
-          
-          // Create the map
-          mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions)
-          
-          // Add a marker
-          new window.google.maps.Marker({
-            position,
-            map: mapInstanceRef.current,
-            title: name,
-            animation: window.google.maps.Animation.DROP,
-          })
-        } else {
-          console.error('Geocode was not successful for the following reason:', status)
-          
-          // Display a fallback message in the map container
-          if (mapRef.current) {
-            mapRef.current.innerHTML = `
-              <div class="flex items-center justify-center h-full">
-                <p class="text-gray-500 dark:text-gray-400">
-                  Unable to load map for this location
-                </p>
-              </div>
-            `
-          }
+        })
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        if (mapRef.current) {
+          mapRef.current.innerHTML = `
+            <div class="flex items-center justify-center h-full">
+              <p class="text-gray-500 dark:text-gray-400">
+                Error loading map
+              </p>
+            </div>
+          `;
         }
-      })
+      }
     }
     
     loadGoogleMapsScript()

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     // In development, we'll just log the email and return success
     if (isDevelopment) {
       console.log('Development mode: Email would be sent with the following data:');
-      console.log(`From: Discover Boba <discover-boba@outlook.com>`);
+      console.log(`From: Discover Boba <talktous@discoverboba.com>`);
       console.log(`To: ${contactEmail || 'No contact email set'}`);
       console.log(`Subject: Contact Form Submission: ${subject}`);
       console.log(`Name: ${name}`);
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       
       const emailPromise = resend.emails.send({
-        from: 'Discover Boba <discover-boba@outlook.com>',
+        from: 'Discover Boba <talktous@discoverboba.com>',
         to: [contactEmail || ''],
         subject: `Contact Form Submission: ${subject}`,
         html: `

@@ -51,7 +51,7 @@ export default function ContactPage() {
                 </div>
                 <h3 className="text-lg font-bold mb-2">Email Us</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  discover-boba@outlook.com
+                  TalkToUs@discoverboba.com
                 </p>
               </div>
               

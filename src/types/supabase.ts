@@ -32,6 +32,8 @@ export interface Database {
           is_premium: boolean
           featured_until: string | null
           featured_logo: string | null
+          owner_id: string | null
+          featured_order_url: string | null
           created_at: string
           updated_at: string
         }
@@ -57,6 +59,8 @@ export interface Database {
           is_premium?: boolean
           featured_until?: string | null
           featured_logo?: string | null
+          owner_id?: string | null
+          featured_order_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -82,6 +86,8 @@ export interface Database {
           is_premium?: boolean
           featured_until?: string | null
           featured_logo?: string | null
+          owner_id?: string | null
+          featured_order_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -126,6 +132,79 @@ export interface Database {
           date?: string
           is_verified?: boolean
           is_approved?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      shop_claim_requests: {
+        Row: {
+          id: string
+          shop_id: string
+          user_id: string
+          status: string
+          message: string | null
+          admin_notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          shop_id: string
+          user_id: string
+          status: string
+          message?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          shop_id?: string
+          user_id?: string
+          status?: string
+          message?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          shop_id: string
+          user_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          plan_type: string
+          status: string
+          current_period_start: string | null
+          current_period_end: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          shop_id: string
+          user_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          plan_type: string
+          status: string
+          current_period_start?: string | null
+          current_period_end?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          shop_id?: string
+          user_id?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          plan_type?: string
+          status?: string
+          current_period_start?: string | null
+          current_period_end?: string | null
           created_at?: string
           updated_at?: string
         }

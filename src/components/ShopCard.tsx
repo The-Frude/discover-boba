@@ -7,8 +7,15 @@ interface ShopCardProps {
 }
 
 export default function ShopCard({ shop }: ShopCardProps) {
+  const isPremium = shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date();
+  
   return (
-    <div className="card group">
+    <div className={`card group ${isPremium ? 'border-2 border-yellow-400 dark:border-yellow-600 relative' : ''}`}>
+      {isPremium && (
+        <div className="absolute -top-3 left-4 bg-yellow-400 dark:bg-yellow-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+          FEATURED
+        </div>
+      )}
       {/* Image container hidden temporarily */}
       {shop.rating > 0 && (
         <div className="bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-bold px-2 py-1 rounded-md flex items-center mb-2">
@@ -43,20 +50,34 @@ export default function ShopCard({ shop }: ShopCardProps) {
         </div>
         
         <div className="flex flex-col space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {shop.user_ratings_total} reviews
-            </span>
-            <Link 
-              href={`/boba-shop/${shop.slug}`}
-              className="text-primary-600 dark:text-primary-400 font-medium text-sm flex items-center"
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {shop.user_ratings_total} reviews
+          </span>
+          <Link 
+            href={`/boba-shop/${shop.slug}`}
+            className="text-primary-600 dark:text-primary-400 font-medium text-sm flex items-center"
+          >
+            View Details
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </Link>
+        </div>
+        
+        {/* Order Now button for premium listings */}
+        {isPremium && shop.featured_order_url && (
+          <div className="mt-3">
+            <a 
+              href={shop.featured_order_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-yellow-500 hover:bg-yellow-600 text-white text-center font-medium py-2 px-4 rounded-md transition-colors"
             >
-              View Details
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </Link>
+              Order Now
+            </a>
           </div>
+        )}
           
           {/* Social Media Sharing */}
           <div className="flex justify-end items-center space-x-2">

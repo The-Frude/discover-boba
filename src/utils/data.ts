@@ -27,6 +27,8 @@ export interface Shop {
   is_premium?: boolean;
   featured_until?: string;
   featured_logo?: string;
+  featured_order_url?: string;
+  owner_id?: string;
 }
 
 export interface City {

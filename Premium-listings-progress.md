@@ -62,6 +62,9 @@
 - ⬜ Update user documentation with premium features information
 - ⬜ Create admin documentation for managing claims and premium listings
 
+### Deployment Issues
+- ✅ Fix Supabase authentication error in API routes during build: `Error: Neither apiKey nor config.authenticator provided`
+
 ## Notes
 - The premium listing implementation follows the plan outlined in shop-owner-featured-listings.md
 - Premium listings are highlighted with a yellow border and badge

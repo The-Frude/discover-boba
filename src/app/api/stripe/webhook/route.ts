@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase';
 import { constructEventFromPayload, calculateFeaturedUntilDate } from '@/utils/stripe';
-import { headers } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 import { Stripe } from 'stripe';
+
+// Create a server-specific Supabase admin client with no session persistence
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+  }
+});
 
 // This endpoint needs to be configured in the Stripe dashboard
 // to receive webhook events for checkout.session.completed
@@ -61,9 +71,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Calculate the featured until date
   const featuredUntil = calculateFeaturedUntilDate(planType);
-
-  // Use the admin client to update the shop and create a subscription record
-  const adminClient = createAdminClient();
 
   // Start a transaction to update the shop and create a subscription record
   const { data, error } = await adminClient.rpc('process_premium_subscription', {

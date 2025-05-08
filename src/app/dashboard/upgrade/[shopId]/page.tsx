@@ -160,6 +160,7 @@ export default function UpgradePage({ params }: UpgradePageProps) {
         body: JSON.stringify({
           shopId,
           planType,
+          userId: user?.id,
           successUrl: `${window.location.origin}/dashboard/upgrade/success?shopId=${shopId}`,
           cancelUrl: `${window.location.origin}/dashboard/upgrade/${shopId}`,
         }),

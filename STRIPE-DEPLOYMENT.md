@@ -84,6 +84,31 @@ If payments are not being processed:
 3. Verify that the API keys are correct
 4. Check the server logs for any errors
 
+### Build Errors
+
+#### Supabase Authentication Error
+
+If you encounter the following error during build:
+```
+Error: Neither apiKey nor config.authenticator provided
+```
+
+This is related to how Supabase client is initialized in server components. 
+
+See [SUPABASE-AUTH-FIX.md](./SUPABASE-AUTH-FIX.md) for detailed information about this error and multiple solution options.
+
+We've implemented a solution that uses server-specific Supabase clients with `persistSession: false` in the API routes. This approach:
+
+1. Creates dedicated Supabase clients in each API route with server-specific configuration
+2. Passes user IDs explicitly from client components to API routes
+3. Uses the admin client with service role key for database operations
+4. Avoids relying on browser-specific features in server components
+
+Make sure all environment variables for Supabase are correctly set in your Vercel project, especially:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
 ## Next Steps
 
 After deploying the Stripe integration, you should:

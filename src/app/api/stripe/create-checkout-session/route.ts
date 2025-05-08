@@ -3,16 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { createCheckoutSession, PREMIUM_PLANS } from '@/utils/stripe';
 import { Database } from '@/types/supabase';
 
-// Create a server-specific Supabase client with no session persistence
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Add Edge Runtime to ensure consistent environment between build and runtime
+export const runtime = 'edge';
 
-const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-  }
-});
+// Create a server-specific Supabase admin client with service role key
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
   auth: {

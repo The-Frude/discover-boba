@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { Stripe } from 'stripe';
 
+// Add Edge Runtime to ensure consistent environment between build and runtime
+export const runtime = 'edge';
+
 // Create a server-specific Supabase admin client with no session persistence
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

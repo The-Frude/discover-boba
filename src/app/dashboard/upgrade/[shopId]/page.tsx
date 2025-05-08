@@ -148,10 +148,15 @@ export default function UpgradePage({ params }: UpgradePageProps) {
         throw new Error('Invalid plan or shop');
       }
       
+      // Ensure user is authenticated
+      if (!user || !user.id) {
+        throw new Error('You must be logged in to upgrade a shop');
+      }
+      
       // Determine plan type
       const planType = plan.duration === 1 ? 'MONTHLY' : 'ANNUAL';
       
-      // Create checkout session
+      // Create checkout session with explicit userId
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -160,11 +165,16 @@ export default function UpgradePage({ params }: UpgradePageProps) {
         body: JSON.stringify({
           shopId,
           planType,
-          userId: user?.id,
+          userId: user.id, // Explicitly pass user ID
           successUrl: `${window.location.origin}/dashboard/upgrade/success?shopId=${shopId}`,
           cancelUrl: `${window.location.origin}/dashboard/upgrade/${shopId}`,
         }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
       
       const { url, error: apiError } = await response.json();
       
@@ -174,9 +184,9 @@ export default function UpgradePage({ params }: UpgradePageProps) {
       
       // Redirect to Stripe Checkout
       window.location.href = url;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating checkout session:', err);
-      setError('Failed to create checkout session. Please try again.');
+      setError(err.message || 'Failed to create checkout session. Please try again.');
       setIsProcessing(false);
     }
   };

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/utils/supabase';
+import { supabase, getSignUpOptions } from '@/utils/supabase';
 
 // Define the shape of our auth context
 interface AuthContextType {
@@ -13,7 +13,7 @@ interface AuthContextType {
     error: Error | null;
     data: { user: User | null; session: Session | null } | null;
   }>;
-  signUp: (email: string, password: string) => Promise<{
+  signUp: (email: string, password: string, options?: { emailRedirectTo?: string }) => Promise<{
     error: Error | null;
     data: { user: User | null; session: Session | null } | null;
   }>;
@@ -56,10 +56,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Check if user is admin
         if (session?.user) {
-          const { data: { role } } = await supabase.rpc('get_user_role', {
-            user_id: session.user.id
-          });
-          setIsAdmin(role === 'admin');
+          try {
+            const { data } = await supabase.rpc('get_user_role', {
+              user_id: session.user.id
+            });
+            
+            // Check if data and role exist before accessing
+            setIsAdmin(data && data.role === 'admin');
+          } catch (error) {
+            console.error('Error checking admin role:', error);
+            setIsAdmin(false);
+          }
         }
 
         setIsLoading(false);
@@ -79,10 +86,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Check if user is admin
         if (session?.user) {
-          const { data: { role } } = await supabase.rpc('get_user_role', {
-            user_id: session.user.id
-          });
-          setIsAdmin(role === 'admin');
+          try {
+            const { data } = await supabase.rpc('get_user_role', {
+              user_id: session.user.id
+            });
+            
+            // Check if data and role exist before accessing
+            setIsAdmin(data && data.role === 'admin');
+          } catch (error) {
+            console.error('Error checking admin role:', error);
+            setIsAdmin(false);
+          }
         } else {
           setIsAdmin(false);
         }
@@ -112,11 +126,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Sign up with email and password
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, options?: { emailRedirectTo?: string }) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: options
       });
       return { data, error };
     } catch (error) {
@@ -137,8 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Reset password (send reset email)
   const resetPassword = async (email: string) => {
     try {
+      const options = getSignUpOptions();
+      const redirectUrl = options.emailRedirectTo?.replace('/dashboard', '/reset-password') || 
+                         `${window.location.origin}/reset-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
       return { error };
     } catch (error) {

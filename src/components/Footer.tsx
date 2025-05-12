@@ -104,6 +104,9 @@ export default function Footer() {
             <Link href="/cookies-policy" className="text-gray-400 hover:text-white text-sm">
               Cookie Policy
             </Link>
+            <Link href="/dashboard" className="text-gray-400 hover:text-white text-sm">
+              Shop Owner Login
+            </Link>
           </div>
         </div>
       </div>

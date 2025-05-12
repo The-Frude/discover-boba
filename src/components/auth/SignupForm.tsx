@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getSignUpOptions } from '@/utils/supabase';
 
 const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -35,7 +36,8 @@ const SignupForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const { error, data } = await signUp(email, password);
+      const options = getSignUpOptions();
+      const { error, data } = await signUp(email, password, options);
       
       if (error) {
         setError(error.message);

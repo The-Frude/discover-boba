@@ -95,19 +95,28 @@ Error: Neither apiKey nor config.authenticator provided
 
 This is related to how Supabase client is initialized in server components. 
 
-See [SUPABASE-AUTH-FIX.md](./SUPABASE-AUTH-FIX.md) for detailed information about this error and multiple solution options.
+See [DEPLOYMENT-FIX.md](./DEPLOYMENT-FIX.md) for detailed information about this error and our comprehensive solution.
 
-We've implemented a solution that uses server-specific Supabase clients with `persistSession: false` in the API routes. This approach:
+We've implemented a solution that:
 
-1. Creates dedicated Supabase clients in each API route with server-specific configuration
-2. Passes user IDs explicitly from client components to API routes
-3. Uses the admin client with service role key for database operations
-4. Avoids relying on browser-specific features in server components
+1. Uses Node.js runtime instead of Edge Runtime for better compatibility
+2. Implements robust environment variable handling with proper error messages
+3. Uses safer Supabase client initialization with null checks
+4. Adds comprehensive error handling for all operations
+5. Uses the admin client with service role key for database operations
+6. Adds defensive initialization of the Stripe client with null checks
 
-Make sure all environment variables for Supabase are correctly set in your Vercel project, especially:
+Make sure all environment variables are correctly set in your Vercel project and GitHub Actions, especially:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_MONTHLY_PRICE_ID`
+- `STRIPE_ANNUAL_PRICE_ID`
+
+Missing any of these environment variables will cause the build to fail or the application to behave unexpectedly.
 
 ## Next Steps
 

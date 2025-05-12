@@ -4,24 +4,61 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { Stripe } from 'stripe';
 
-// Add Edge Runtime to ensure consistent environment between build and runtime
-export const runtime = 'edge';
+// Use Node.js runtime instead of Edge Runtime for better compatibility
+// export const runtime = 'edge';
 
-// Create a server-specific Supabase admin client with no session persistence
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
+// Safely get environment variables with fallbacks
+const getEnvVar = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    console.warn(`Environment variable ${name} is not set`);
+    return '';
   }
-});
+  return value;
+};
+
+// Create a server-specific Supabase admin client with service role key
+const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseServiceKey = getEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+
+// Only create the client if the required environment variables are available
+const adminClient = supabaseUrl && supabaseServiceKey 
+  ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      }
+    })
+  : null;
 
 // This endpoint needs to be configured in the Stripe dashboard
 // to receive webhook events for checkout.session.completed
 export async function POST(req: NextRequest) {
+  // Verify that the admin client was initialized successfully
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'Server configuration error: Database client not initialized' },
+      { status: 500 }
+    );
+  }
+
+  // Verify Stripe webhook secret is available
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: 'Server configuration error: Missing Stripe webhook secret' },
+      { status: 500 }
+    );
+  }
+
   const body = await req.text();
   const signature = req.headers.get('stripe-signature') as string;
+
+  if (!signature) {
+    return NextResponse.json(
+      { error: 'Missing Stripe signature' },
+      { status: 400 }
+    );
+  }
 
   try {
     // Verify the webhook signature
@@ -46,15 +83,23 @@ export async function POST(req: NextRequest) {
  * Handle checkout.session.completed event
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (!adminClient) {
+    throw new Error('Database client not initialized');
+  }
+
   // Get the shop ID from the session metadata
   const shopId = session.metadata?.shopId;
   if (!shopId) {
     throw new Error('No shop ID found in session metadata');
   }
 
-  // Get the customer ID and subscription ID
+  // Get the customer ID and payment intent ID
   const customerId = session.customer as string;
   const paymentIntentId = session.payment_intent as string;
+
+  if (!customerId || !paymentIntentId) {
+    throw new Error('Missing customer ID or payment intent ID in session');
+  }
 
   // Determine the plan type from the line items
   const lineItems = session.line_items?.data;
@@ -66,6 +111,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const priceId = lineItems[0].price?.id;
   if (!priceId) {
     throw new Error('No price ID found in line items');
+  }
+
+  // Verify Stripe price IDs are available
+  if (!process.env.STRIPE_MONTHLY_PRICE_ID || !process.env.STRIPE_ANNUAL_PRICE_ID) {
+    throw new Error('Missing Stripe price IDs in environment variables');
   }
 
   // Determine if this is a monthly or annual plan

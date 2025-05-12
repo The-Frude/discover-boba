@@ -1,14 +1,38 @@
 import Stripe from 'stripe';
 
+// Safely get environment variables with fallbacks
+const getEnvVar = (name: string, required = false): string => {
+  const value = process.env[name];
+  if (!value && required) {
+    throw new Error(`Required environment variable ${name} is not set`);
+  }
+  if (!value) {
+    console.warn(`Environment variable ${name} is not set`);
+    return '';
+  }
+  return value;
+};
+
 // Initialize Stripe with the secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-04-30.basil', // Use the latest stable API version
-});
+const stripeSecretKey = getEnvVar('STRIPE_SECRET_KEY');
+let stripe: Stripe | null = null;
+
+try {
+  if (stripeSecretKey) {
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-04-30.basil', // Use the latest stable API version
+    });
+  } else {
+    console.error('Stripe initialization failed: Missing STRIPE_SECRET_KEY');
+  }
+} catch (error) {
+  console.error('Stripe initialization error:', error);
+}
 
 // Premium plan price IDs
 export const PREMIUM_PLANS = {
-  MONTHLY: process.env.STRIPE_MONTHLY_PRICE_ID!,
-  ANNUAL: process.env.STRIPE_ANNUAL_PRICE_ID!,
+  MONTHLY: getEnvVar('STRIPE_MONTHLY_PRICE_ID'),
+  ANNUAL: getEnvVar('STRIPE_ANNUAL_PRICE_ID'),
 };
 
 // Plan durations in months
@@ -35,6 +59,10 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
+
   // Create the checkout session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -61,7 +89,11 @@ export async function createCheckoutSession({
  * Verify Stripe webhook signature
  */
 export function constructEventFromPayload(signature: string, payload: Buffer) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
+
+  const webhookSecret = getEnvVar('STRIPE_WEBHOOK_SECRET', true);
   
   return stripe.webhooks.constructEvent(
     payload,
@@ -84,6 +116,9 @@ export function calculateFeaturedUntilDate(planType: 'MONTHLY' | 'ANNUAL'): Date
  * Get Stripe customer by ID
  */
 export async function getCustomer(customerId: string) {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
   return stripe.customers.retrieve(customerId);
 }
 
@@ -99,6 +134,9 @@ export async function createCustomer({
   name?: string;
   metadata?: Record<string, string>;
 }) {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
   return stripe.customers.create({
     email,
     name,

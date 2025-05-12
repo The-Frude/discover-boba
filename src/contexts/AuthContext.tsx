@@ -61,8 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user_id: session.user.id
             });
             
-            // Check if data and role exist before accessing
-            setIsAdmin(data && data.role === 'admin');
+            // Check if data exists and has the expected structure
+            if (data && typeof data === 'object' && 'role' in data) {
+              setIsAdmin(data.role === 'admin');
+            } else {
+              setIsAdmin(false);
+            }
           } catch (error) {
             console.error('Error checking admin role:', error);
             setIsAdmin(false);
@@ -91,8 +95,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user_id: session.user.id
             });
             
-            // Check if data and role exist before accessing
-            setIsAdmin(data && data.role === 'admin');
+            // Check if data exists and has the expected structure
+            if (data && typeof data === 'object' && 'role' in data) {
+              setIsAdmin(data.role === 'admin');
+            } else {
+              setIsAdmin(false);
+            }
           } catch (error) {
             console.error('Error checking admin role:', error);
             setIsAdmin(false);
@@ -152,9 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Reset password (send reset email)
   const resetPassword = async (email: string) => {
     try {
+      // Get the base URL from the signup options
       const options = getSignUpOptions();
-      const redirectUrl = options.emailRedirectTo?.replace('/dashboard', '/reset-password') || 
-                         `${window.location.origin}/reset-password`;
+      // Extract the base URL by removing the '/dashboard' part
+      const baseUrl = options.emailRedirectTo?.replace('/dashboard', '');
+      // Create the reset password URL
+      const redirectUrl = baseUrl ? `${baseUrl}/reset-password` : `${window.location.origin}/reset-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,

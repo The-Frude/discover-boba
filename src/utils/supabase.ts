@@ -4,7 +4,13 @@ import { Database } from '../types/supabase';
 // Create a single supabase client for the entire app
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Always use the production URL for auth redirects in production
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com';
+
+// Ensure we're not using localhost in production
+const redirectUrl = siteUrl.includes('localhost') && process.env.NODE_ENV === 'production' 
+  ? 'https://discoverboba.com' 
+  : siteUrl;
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -41,8 +47,13 @@ if (typeof window !== 'undefined') {
 
 // Use this for auth operations that need redirect URLs
 export const getSignUpOptions = () => {
+  // Always use the production URL for auth redirects in production
+  const redirectBase = siteUrl.includes('localhost') && process.env.NODE_ENV === 'production' 
+    ? 'https://discoverboba.com' 
+    : siteUrl;
+    
   return {
-    emailRedirectTo: `${siteUrl}/dashboard`
+    emailRedirectTo: `${redirectBase}/dashboard`
   };
 };
 

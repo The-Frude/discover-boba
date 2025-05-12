@@ -42,16 +42,19 @@ const SignupForm: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        setSuccessMessage('Registration successful! Please check your email to confirm your account.');
         // Clear form
         setEmail('');
         setPassword('');
         setConfirmPassword('');
         
-        // If auto-confirm is enabled (development), redirect to dashboard
-        if (data?.user && !data.user.identities?.[0]?.identity_data?.email_verified) {
-          router.push('/dashboard');
-        }
+        // Always show success message and don't redirect
+        setSuccessMessage('Registration successful! Please check your email to confirm your account. You will need to click the confirmation link in the email before you can log in.');
+        
+        // Disable auto-redirect to dashboard even in development
+        // This ensures users always see the confirmation message
+        // if (data?.user && !data.user.identities?.[0]?.identity_data?.email_verified) {
+        //   router.push('/dashboard');
+        // }
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -72,8 +75,10 @@ const SignupForm: React.FC = () => {
       )}
       
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 text-green-800 dark:text-green-200 rounded-md">
-          {successMessage}
+        <div className="mb-6 p-4 bg-green-100 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-500 text-green-800 dark:text-green-200 rounded-md shadow-sm">
+          <h3 className="text-lg font-medium mb-2">Registration Successful!</h3>
+          <p>{successMessage}</p>
+          <p className="mt-2 font-medium">Please check your email inbox to confirm your account.</p>
         </div>
       )}
       

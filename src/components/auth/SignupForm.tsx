@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getSignUpOptions } from '@/utils/supabase';
+import { clearStoredEmail } from '@/utils/emailConfirmation';
 
 const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -36,11 +37,16 @@ const SignupForm: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Store email in localStorage for email verification
+      localStorage.setItem('signupEmail', email);
+      
       const options = getSignUpOptions();
       const { error, data } = await signUp(email, password, options);
       
       if (error) {
         setError(error.message);
+        // Remove email from localStorage if signup fails
+        clearStoredEmail();
       } else {
         // Clear form
         setEmail('');
@@ -59,6 +65,8 @@ const SignupForm: React.FC = () => {
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Signup error:', err);
+      // Remove email from localStorage if signup fails
+      clearStoredEmail();
     } finally {
       setIsLoading(false);
     }

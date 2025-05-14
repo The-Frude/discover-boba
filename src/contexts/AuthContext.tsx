@@ -20,6 +20,10 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  verifyEmail: (code: string) => Promise<{
+    error: Error | null;
+    success: boolean;
+  }>;
   isAdmin: boolean;
 }
 
@@ -33,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   resetPassword: async () => ({ error: null }),
   updatePassword: async () => ({ error: null }),
+  verifyEmail: async () => ({ error: null, success: false }),
   isAdmin: false,
 });
 
@@ -190,6 +195,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Verify email with confirmation code
+  const verifyEmail = async (code: string) => {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        type: 'signup',
+        token: code,
+        email: user?.email || ''
+      });
+      
+      if (error) {
+        console.error('Error verifying email:', error);
+        return { error, success: false };
+      }
+      
+      // Update the local state with the new session
+      if (data?.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        
+        // Check if user is admin
+        if (data.session.user) {
+          try {
+            const { data: roleData } = await supabase.rpc('get_user_role', {
+              user_id: data.session.user.id
+            });
+            
+            if (roleData && typeof roleData === 'object' && 'role' in roleData) {
+              setIsAdmin(roleData.role === 'admin');
+            }
+          } catch (error) {
+            console.error('Error checking admin role:', error);
+          }
+        }
+      }
+      
+      return { error: null, success: true };
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      return { error: error as Error, success: false };
+    }
+  };
+
   // Create the value object for the context
   const value = {
     user,
@@ -200,6 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     resetPassword,
     updatePassword,
+    verifyEmail,
     isAdmin,
   };
 

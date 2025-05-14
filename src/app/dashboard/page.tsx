@@ -5,12 +5,64 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getOwnedShops } from '@/utils/auth';
 import Link from 'next/link';
 import { Shop } from '@/utils/data';
+import { useSearchParams } from 'next/navigation';
+import { getStoredEmail, clearStoredEmail } from '@/utils/emailConfirmation';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, verifyEmail } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  
+  // Get the code from URL query parameters
+  const searchParams = useSearchParams();
+  const code = searchParams.get('code');
+
+  useEffect(() => {
+    // Handle email verification if code is present
+    const handleEmailVerification = async () => {
+      if (code) {
+        setIsVerifying(true);
+        setVerificationError(null);
+        
+        try {
+          // If we don't have a user yet, we need to get the email from localStorage
+          // This is a workaround since the email is needed for verification but we don't have it in the session yet
+          let email = user?.email;
+          if (!email) {
+            const storedEmail = getStoredEmail();
+            if (storedEmail) {
+              email = storedEmail;
+            } else {
+              setVerificationError('Email not found. Please try logging in directly.');
+              setIsVerifying(false);
+              return;
+            }
+          }
+          
+          const { error, success } = await verifyEmail(code);
+          
+          if (error) {
+            setVerificationError(error.message);
+          } else if (success) {
+            setVerificationSuccess(true);
+            // Clear the stored email after successful verification
+            clearStoredEmail();
+          }
+        } catch (err) {
+          console.error('Error verifying email:', err);
+          setVerificationError('An unexpected error occurred during verification');
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+    };
+    
+    handleEmailVerification();
+  }, [code, verifyEmail, user]);
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -31,8 +83,65 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+  // Show verification status if verifying
+  if (isVerifying) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-6">Verifying Your Email</h2>
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mx-auto w-48"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mx-auto w-64"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show verification error if any
+  if (verificationError) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-6">Email Verification Failed</h2>
+        <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-200 rounded-md max-w-md mx-auto">
+          {verificationError}
+        </div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          Please try again or contact support if the problem persists.
+        </p>
+        <div className="mt-6">
+          <Link href="/login" className="btn-primary inline-block">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Show verification success message
+  if (verificationSuccess && !user) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-6">Email Verified Successfully!</h2>
+        <div className="p-4 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 text-green-800 dark:text-green-200 rounded-md max-w-md mx-auto">
+          Your email has been verified. You can now log in to your account.
+        </div>
+        <div className="mt-6">
+          <Link href="/login" className="btn-primary inline-block">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
+      {verificationSuccess && user && (
+        <div className="mb-6 p-4 bg-green-100 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-500 text-green-800 dark:text-green-200 rounded-md">
+          <h3 className="text-lg font-medium mb-2">Email Verified Successfully!</h3>
+          <p>Your email has been verified and your account is now active.</p>
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold mb-6">My Shops</h2>
 
       {isLoading ? (

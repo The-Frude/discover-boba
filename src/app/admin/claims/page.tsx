@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllClaimRequests, approveClaimRequest, rejectClaimRequest } from '@/utils/auth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -29,7 +29,28 @@ interface ClaimRequest {
   };
 }
 
-export default function AdminClaimsPage() {
+// Loading component for Suspense fallback
+function ClaimsPageLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="container-custom">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Shop Claim Requests</h1>
+          </div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component wrapped with Suspense
+function AdminClaimsPageContent() {
   const { isAdmin } = useAuth();
   const [claimRequests, setClaimRequests] = useState<ClaimRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +133,8 @@ export default function AdminClaimsPage() {
   };
   
   return (
-    <ProtectedRoute adminOnly>
+    <Suspense fallback={<ClaimsPageLoading />}>
+      <ProtectedRoute adminOnly>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="container-custom">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -334,6 +356,12 @@ export default function AdminClaimsPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+      </ProtectedRoute>
+    </Suspense>
   );
+}
+
+// Export the wrapped component
+export default function AdminClaimsPage() {
+  return <AdminClaimsPageContent />;
 }

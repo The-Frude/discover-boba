@@ -1,5 +1,25 @@
 import { withSentryConfig } from '@sentry/nextjs';
 
+// Helper to safely get environment variables
+const getEnvVar = (name, defaultValue = '') => {
+  const value = process.env[name];
+  return value || defaultValue;
+};
+
+// Detect build phase
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || 
+                     process.env.NEXT_PHASE === 'build';
+
+// Provide mock values during build if needed
+const getMockableEnvVar = (name, defaultValue = '') => {
+  const value = process.env[name];
+  if (!value && isBuildPhase) {
+    console.log(`Using mock value for ${name} during build`);
+    return defaultValue;
+  }
+  return value || defaultValue;
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -75,18 +95,26 @@ const nextConfig = {
     ];
   },
   
-  // Configure environment variables
+  // Configure environment variables with safe defaults for build time
   env: {
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com',
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    // Add Stripe environment variables
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-    STRIPE_MONTHLY_PRICE_ID: process.env.STRIPE_MONTHLY_PRICE_ID,
-    STRIPE_ANNUAL_PRICE_ID: process.env.STRIPE_ANNUAL_PRICE_ID,
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    // Base URL
+    NEXT_PUBLIC_SITE_URL: getEnvVar('NEXT_PUBLIC_SITE_URL', 'https://discoverboba.com'),
+    
+    // Supabase variables
+    NEXT_PUBLIC_SUPABASE_URL: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    SUPABASE_SERVICE_ROLE_KEY: getEnvVar('SUPABASE_SERVICE_ROLE_KEY'),
+    
+    // Stripe variables with safe defaults for build time
+    STRIPE_SECRET_KEY: getMockableEnvVar('STRIPE_SECRET_KEY', 'sk_test_mock_key_for_build'),
+    STRIPE_WEBHOOK_SECRET: getMockableEnvVar('STRIPE_WEBHOOK_SECRET', 'whsec_mock_key_for_build'),
+    STRIPE_MONTHLY_PRICE_ID: getMockableEnvVar('STRIPE_MONTHLY_PRICE_ID', 'price_mock_monthly'),
+    STRIPE_ANNUAL_PRICE_ID: getMockableEnvVar('STRIPE_ANNUAL_PRICE_ID', 'price_mock_annual'),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: getMockableEnvVar('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'pk_test_mock_key_for_build'),
+    
+    // Build information
+    NEXT_PHASE: process.env.NEXT_PHASE || '',
+    IS_BUILD_TIME: isBuildPhase ? 'true' : 'false',
   },
   
   // Configure webpack for production

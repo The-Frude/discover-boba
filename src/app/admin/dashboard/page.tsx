@@ -4,8 +4,10 @@ import React from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
-export default function AdminDashboardPage() {
+// Main component content
+function AdminDashboardContent() {
   const { user } = useAuth();
 
   // Admin dashboard cards
@@ -121,3 +123,6 @@ export default function AdminDashboardPage() {
     </ProtectedRoute>
   );
 }
+
+// Export the wrapped component
+export default withSuspense(AdminDashboardContent);

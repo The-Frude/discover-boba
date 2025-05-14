@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllClaimRequests, approveClaimRequest, rejectClaimRequest } from '@/utils/auth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Link from 'next/link';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
 interface ClaimRequest {
   id: string;
@@ -49,8 +50,8 @@ function ClaimsPageLoading() {
   );
 }
 
-// Main component wrapped with Suspense
-function AdminClaimsPageContent() {
+// Main component content
+function AdminClaimsContent() {
   const { isAdmin } = useAuth();
   const [claimRequests, setClaimRequests] = useState<ClaimRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,8 +134,7 @@ function AdminClaimsPageContent() {
   };
   
   return (
-    <Suspense fallback={<ClaimsPageLoading />}>
-      <ProtectedRoute adminOnly>
+    <ProtectedRoute adminOnly>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="container-custom">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -356,12 +356,9 @@ function AdminClaimsPageContent() {
           </div>
         </div>
       </div>
-      </ProtectedRoute>
-    </Suspense>
+    </ProtectedRoute>
   );
 }
 
-// Export the wrapped component
-export default function AdminClaimsPage() {
-  return <AdminClaimsPageContent />;
-}
+// Export the wrapped component with custom loading component
+export default withSuspense(AdminClaimsContent, <ClaimsPageLoading />);

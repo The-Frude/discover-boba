@@ -1,10 +1,25 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Review } from '@/utils/reviews'
+import { withSuspense } from '@/components/hoc/withSuspense'
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
 
-export default function AdminReviewsPage() {
+// Loading component for Suspense fallback
+function ReviewsPageLoading() {
+  return (
+    <div className="container-custom py-12">
+      <h1 className="text-2xl font-bold mb-6">Review Moderation</h1>
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    </div>
+  )
+}
+
+// Main component content
+function AdminReviewsContent() {
   const [reviews, setReviews] = useState<Record<string, Review[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -187,117 +202,122 @@ export default function AdminReviewsPage() {
   }
   
   return (
-    <div className="container-custom py-12">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Review Moderation</h1>
-        <Link href="/" className="btn-secondary">
-          Back to Home
-        </Link>
-      </div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-        <div className="mb-6">
-          <label htmlFor="shopSelect" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Select Shop
-          </label>
-          <select
-            id="shopSelect"
-            value={selectedShop}
-            onChange={(e) => setSelectedShop(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          >
-            {shopSlugs.map((slug) => (
-              <option key={slug} value={slug}>
-                {slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </option>
-            ))}
-          </select>
+    <ProtectedRoute adminOnly>
+      <div className="container-custom py-12">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Review Moderation</h1>
+          <Link href="/admin/dashboard" className="btn-secondary">
+            Back to Admin Dashboard
+          </Link>
         </div>
         
-        {selectedShop && reviews[selectedShop] ? (
-          reviews[selectedShop].length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Rating
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Comment
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {reviews[selectedShop].map((review) => (
-                    <tr key={review.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{review.user_name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{review.user_email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{review.rating} / 5</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">{review.comment}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(review.date)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${review.is_approved ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}`}>
-                          {review.is_approved ? 'Approved' : 'Not Approved'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleApprovalToggle(review)}
-                          className={`mr-2 ${review.is_approved ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' : 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300'}`}
-                        >
-                          {review.is_approved ? 'Unapprove' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(review)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-600 dark:text-gray-400">No reviews found for this shop.</p>
-            </div>
-          )
-        ) : (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+          <div className="mb-6">
+            <label htmlFor="shopSelect" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Shop
+            </label>
+            <select
+              id="shopSelect"
+              value={selectedShop}
+              onChange={(e) => setSelectedShop(e.target.value)}
+              className="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              {shopSlugs.map((slug) => (
+                <option key={slug} value={slug}>
+                  {slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+          
+          {selectedShop && reviews[selectedShop] ? (
+            reviews[selectedShop].length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Rating
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Comment
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {reviews[selectedShop].map((review) => (
+                      <tr key={review.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{review.user_name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{review.user_email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">{review.rating} / 5</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">{review.comment}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(review.date)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${review.is_approved ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}`}>
+                            {review.is_approved ? 'Approved' : 'Not Approved'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleApprovalToggle(review)}
+                            className={`mr-2 ${review.is_approved ? 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300' : 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300'}`}
+                          >
+                            {review.is_approved ? 'Unapprove' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(review)}
+                            className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600 dark:text-gray-400">No reviews found for this shop.</p>
+              </div>
+            )
+          ) : (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            </div>
+          )}
+        </div>
+        
+        <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-md text-yellow-800 dark:text-yellow-100">
+          <h3 className="font-semibold mb-2">Note:</h3>
+          <p>
+            This is a simplified admin interface for demonstration purposes. In a production environment, this page would be protected by authentication and would have more robust moderation features.
+          </p>
+        </div>
       </div>
-      
-      <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-md text-yellow-800 dark:text-yellow-100">
-        <h3 className="font-semibold mb-2">Note:</h3>
-        <p>
-          This is a simplified admin interface for demonstration purposes. In a production environment, this page would be protected by authentication and would have more robust moderation features.
-        </p>
-      </div>
-    </div>
+    </ProtectedRoute>
   )
 }
+
+// Export the wrapped component with custom loading component
+export default withSuspense(AdminReviewsContent, <ReviewsPageLoading />);

@@ -97,14 +97,33 @@ This is related to how Supabase client is initialized in server components.
 
 See [DEPLOYMENT-FIX.md](./DEPLOYMENT-FIX.md) for detailed information about this error and our comprehensive solution.
 
-We've implemented a solution that:
+#### Stripe Environment Variables Error
+
+If you encounter the following errors during build:
+```
+Environment variable STRIPE_SECRET_KEY is not set
+Stripe initialization failed: Missing STRIPE_SECRET_KEY
+Environment variable STRIPE_MONTHLY_PRICE_ID is not set
+Environment variable STRIPE_ANNUAL_PRICE_ID is not set
+```
+
+Or client-side rendering errors like:
+```
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/admin/claims"
+```
+
+See [BUILD-FIX.md](./BUILD-FIX.md) for detailed information about these errors and our comprehensive solution.
+
+We've implemented solutions that:
 
 1. Uses Node.js runtime instead of Edge Runtime for better compatibility
 2. Implements robust environment variable handling with proper error messages
 3. Uses safer Supabase client initialization with null checks
 4. Adds comprehensive error handling for all operations
 5. Uses the admin client with service role key for database operations
-6. Adds defensive initialization of the Stripe client with null checks
+6. Adds defensive initialization of the Stripe client with lazy loading
+7. Provides mock implementations for Stripe during build time
+8. Wraps client components in Suspense boundaries using a reusable HOC pattern
 
 Make sure all environment variables are correctly set in your Vercel project and GitHub Actions, especially:
 - `NEXT_PUBLIC_SUPABASE_URL`

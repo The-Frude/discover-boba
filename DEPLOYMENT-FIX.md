@@ -107,6 +107,13 @@ Before deploying to production, ensure:
 4. Update documentation for users and admins
 5. Add more comprehensive error logging and monitoring
 
+## Related Documentation
+
+For additional deployment fixes and solutions:
+
+- [BUILD-FIX.md](./BUILD-FIX.md) - Comprehensive solution for Stripe environment variables issues and client-side rendering problems
+- [STRIPE-DEPLOYMENT.md](./STRIPE-DEPLOYMENT.md) - Complete guide for deploying the Stripe integration
+
 ## References
 
 - [Supabase Auth Helpers for Next.js](https://supabase.com/docs/guides/auth/auth-helpers/nextjs)

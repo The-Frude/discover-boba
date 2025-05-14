@@ -3,13 +3,14 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
+const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { user, isLoading, isAdmin } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,4 +69,5 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
   return <>{children}</>;
 };
 
-export default ProtectedRoute;
+// Export the component wrapped with Suspense
+export default withSuspense(ProtectedRouteContent);

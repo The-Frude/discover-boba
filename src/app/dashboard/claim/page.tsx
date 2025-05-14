@@ -6,8 +6,10 @@ import { createShopClaimRequest } from '@/utils/auth';
 import { supabase } from '@/utils/supabase';
 import { Shop } from '@/utils/data';
 import Link from 'next/link';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
-export default function ClaimShopPage() {
+// Component that uses hooks
+function ClaimShopContent() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Shop[]>([]);
@@ -275,3 +277,6 @@ export default function ClaimShopPage() {
     </div>
   );
 }
+
+// Export the component wrapped with Suspense
+export default withSuspense(ClaimShopContent);

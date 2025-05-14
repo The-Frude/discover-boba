@@ -8,6 +8,7 @@ import { Shop } from '@/utils/data';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
 interface UpgradePageProps {
   params: {
@@ -63,7 +64,7 @@ const premiumPlans = [
   },
 ];
 
-export default function UpgradePage({ params }: UpgradePageProps) {
+function UpgradePageContent({ params }: UpgradePageProps) {
   const { shopId } = params;
   const { user } = useAuth();
   const router = useRouter();
@@ -367,3 +368,6 @@ export default function UpgradePage({ params }: UpgradePageProps) {
     </div>
   );
 }
+
+// Export the component wrapped with Suspense
+export default withSuspense(UpgradePageContent);

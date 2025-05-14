@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { withSuspense } from '@/components/hoc/withSuspense';
 
 interface FilterSidebarProps {
   tags: string[]
   citySlug: string
 }
 
-export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
+function FilterSidebarContent({ tags, citySlug }: FilterSidebarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -141,3 +142,6 @@ export default function FilterSidebar({ tags, citySlug }: FilterSidebarProps) {
     </div>
   );
 }
+
+// Export the component wrapped with Suspense
+export default withSuspense(FilterSidebarContent);

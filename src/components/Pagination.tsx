@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { withSuspense } from '@/components/hoc/withSuspense'
 
 interface PaginationProps {
   totalItems: number
@@ -11,7 +12,7 @@ interface PaginationProps {
   selectedTags?: string[]
 }
 
-export default function Pagination({ 
+function PaginationContent({ 
   totalItems, 
   itemsPerPage, 
   currentPage, 
@@ -140,3 +141,6 @@ export default function Pagination({
     </div>
   )
 }
+
+// Export the component wrapped with Suspense
+export default withSuspense(PaginationContent)

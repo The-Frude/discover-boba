@@ -2,12 +2,13 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { withSuspense } from '@/components/hoc/withSuspense'
 
 interface SortDropdownProps {
   totalItems: number
 }
 
-export default function SortDropdown({ totalItems }: SortDropdownProps) {
+function SortDropdownContent({ totalItems }: SortDropdownProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -48,3 +49,6 @@ export default function SortDropdown({ totalItems }: SortDropdownProps) {
     </div>
   )
 }
+
+// Export the component wrapped with Suspense
+export default withSuspense(SortDropdownContent)

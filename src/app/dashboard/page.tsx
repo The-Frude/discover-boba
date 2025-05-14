@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnedShops } from '@/utils/auth';
 import Link from 'next/link';
@@ -8,7 +8,20 @@ import { Shop } from '@/utils/data';
 import { useSearchParams } from 'next/navigation';
 import { getStoredEmail, clearStoredEmail } from '@/utils/emailConfirmation';
 
-export default function DashboardPage() {
+// Loading component for Suspense fallback
+function PageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="h-12 w-12 rounded-full bg-primary-200 dark:bg-primary-900 mb-4"></div>
+        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
+// Content component that uses hooks
+function DashboardContent() {
   const { user, verifyEmail } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -249,5 +262,14 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isShopOwner } from '@/utils/auth';
 import { supabase } from '@/utils/supabase';
@@ -14,7 +14,20 @@ interface ShopEditPageProps {
   };
 }
 
-export default function ShopEditPage({ params }: ShopEditPageProps) {
+// Loading component for Suspense fallback
+function PageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="h-12 w-12 rounded-full bg-primary-200 dark:bg-primary-900 mb-4"></div>
+        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
+// Content component that uses hooks
+function ShopEditContent({ params }: ShopEditPageProps) {
   const { shopId } = params;
   const { user } = useAuth();
   const router = useRouter();
@@ -363,5 +376,14 @@ export default function ShopEditPage({ params }: ShopEditPageProps) {
         </form>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function ShopEditPage(props: ShopEditPageProps) {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <ShopEditContent {...props} />
+    </Suspense>
   );
 }

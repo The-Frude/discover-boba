@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getOwnedShops } from '@/utils/auth';
 import Link from 'next/link';
 import { Shop } from '@/utils/data';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getStoredEmail, clearStoredEmail } from '@/utils/emailConfirmation';
+import { createClient } from '@/utils/supabase/client';
 
 // Loading component for Suspense fallback
 function PageLoading() {
@@ -32,50 +33,45 @@ function DashboardContent() {
   
   // Get the code from URL query parameters
   const searchParams = useSearchParams();
+  const router = useRouter();
   const code = searchParams.get('code');
 
+  // Handle auth code exchange
   useEffect(() => {
-    // Handle email verification if code is present
-    const handleEmailVerification = async () => {
+    const handleAuthCodeExchange = async () => {
       if (code) {
         setIsVerifying(true);
         setVerificationError(null);
         
         try {
-          // If we don't have a user yet, we need to get the email from localStorage
-          // This is a workaround since the email is needed for verification but we don't have it in the session yet
-          let email = user?.email;
-          if (!email) {
-            const storedEmail = getStoredEmail();
-            if (storedEmail) {
-              email = storedEmail;
-            } else {
-              setVerificationError('Email not found. Please try logging in directly.');
-              setIsVerifying(false);
-              return;
-            }
-          }
+          // Create a client-side Supabase instance
+          const supabaseClient = createClient();
           
-          const { error, success } = await verifyEmail(code);
+          // Exchange the code for a session
+          const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
           
           if (error) {
+            console.error("Error exchanging code for session:", error.message);
             setVerificationError(error.message);
-          } else if (success) {
+          } else {
+            // Success - remove the code param and reload
             setVerificationSuccess(true);
-            // Clear the stored email after successful verification
             clearStoredEmail();
+            
+            // Redirect to dashboard without the code parameter
+            router.replace("/dashboard");
           }
         } catch (err) {
-          console.error('Error verifying email:', err);
-          setVerificationError('An unexpected error occurred during verification');
+          console.error("Error handling auth redirect:", err);
+          setVerificationError("An unexpected error occurred during verification");
         } finally {
           setIsVerifying(false);
         }
       }
     };
     
-    handleEmailVerification();
-  }, [code, verifyEmail, user]);
+    handleAuthCodeExchange();
+  }, [code, router]);
 
   useEffect(() => {
     const fetchShops = async () => {

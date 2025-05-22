@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { Shop } from '@/utils/data';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getStoredEmail, clearStoredEmail } from '@/utils/emailConfirmation';
-import { createClient } from '@/utils/supabase/client';
 
 // Loading component for Suspense fallback
 function PageLoading() {
@@ -23,7 +22,7 @@ function PageLoading() {
 
 // Content component that uses hooks
 function DashboardContent() {
-  const { user, verifyEmail } = useAuth();
+  const { user, verifyEmail, exchangeAuthCode } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,33 +35,46 @@ function DashboardContent() {
   const router = useRouter();
   const code = searchParams.get('code');
 
+  // Debug logging
+  useEffect(() => {
+    if (code) {
+      console.log('[Dashboard Debug] Code detected in URL:', code ? 'Present' : 'None');
+      console.log('[Dashboard Debug] Auth state:', { 
+        user: user ? 'Logged in' : 'Not logged in', 
+        isLoading, 
+        isVerifying 
+      });
+    }
+  }, [code, user, isLoading, isVerifying]);
+
   // Handle auth code exchange
   useEffect(() => {
     const handleAuthCodeExchange = async () => {
       if (code) {
+        console.log('[Dashboard Debug] Starting code exchange process');
         setIsVerifying(true);
         setVerificationError(null);
         
         try {
-          // Create a client-side Supabase instance
-          const supabaseClient = createClient();
-          
-          // Exchange the code for a session
-          const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+          // Use the AuthContext method instead of direct Supabase client
+          const { error, success } = await exchangeAuthCode(code);
           
           if (error) {
-            console.error("Error exchanging code for session:", error.message);
+            console.error("[Dashboard Debug] Error exchanging code:", error.message);
             setVerificationError(error.message);
-          } else {
-            // Success - remove the code param and reload
+          } else if (success) {
+            console.log('[Dashboard Debug] Code exchange successful');
             setVerificationSuccess(true);
             clearStoredEmail();
             
-            // Redirect to dashboard without the code parameter
-            router.replace("/dashboard");
+            // Use setTimeout to ensure state updates before navigation
+            setTimeout(() => {
+              console.log('[Dashboard Debug] Redirecting to dashboard without code');
+              router.replace("/dashboard");
+            }, 100);
           }
         } catch (err) {
-          console.error("Error handling auth redirect:", err);
+          console.error("[Dashboard Debug] Error handling auth redirect:", err);
           setVerificationError("An unexpected error occurred during verification");
         } finally {
           setIsVerifying(false);
@@ -71,7 +83,7 @@ function DashboardContent() {
     };
     
     handleAuthCodeExchange();
-  }, [code, router]);
+  }, [code, exchangeAuthCode, router]);
 
   useEffect(() => {
     const fetchShops = async () => {

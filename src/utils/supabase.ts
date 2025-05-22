@@ -16,7 +16,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false, // Change to false to prevent automatic handling
     flowType: 'pkce'
   },
   global: {
@@ -25,6 +25,14 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     }
   }
 });
+
+// Log Supabase configuration for debugging
+if (typeof window !== 'undefined') {
+  console.log('[Supabase Debug] Client initialized with config:', { 
+    detectSessionInUrl: false,
+    flowType: 'pkce'
+  });
+}
 
 // Configure site URL for auth operations
 if (typeof window !== 'undefined') {

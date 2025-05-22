@@ -24,6 +24,10 @@ interface AuthContextType {
     error: Error | null;
     success: boolean;
   }>;
+  exchangeAuthCode: (code: string) => Promise<{
+    error: Error | null;
+    success: boolean;
+  }>;
   isAdmin: boolean;
 }
 
@@ -38,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   resetPassword: async () => ({ error: null }),
   updatePassword: async () => ({ error: null }),
   verifyEmail: async () => ({ error: null, success: false }),
+  exchangeAuthCode: async () => ({ error: null, success: false }),
   isAdmin: false,
 });
 
@@ -195,9 +200,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper function to check admin status
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase.rpc('get_user_role', {
+        user_id: userId
+      });
+      
+      // Check if data exists and has the expected structure
+      if (data && typeof data === 'object' && 'role' in data) {
+        setIsAdmin(data.role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      setIsAdmin(false);
+    }
+  };
+
   // Verify email with confirmation code
   const verifyEmail = async (code: string) => {
     try {
+      console.log('[Auth Debug] Verifying email with code');
+      
       const { data, error } = await supabase.auth.verifyOtp({
         type: 'signup',
         token: code,
@@ -216,23 +242,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Check if user is admin
         if (data.session.user) {
-          try {
-            const { data: roleData } = await supabase.rpc('get_user_role', {
-              user_id: data.session.user.id
-            });
-            
-            if (roleData && typeof roleData === 'object' && 'role' in roleData) {
-              setIsAdmin(roleData.role === 'admin');
-            }
-          } catch (error) {
-            console.error('Error checking admin role:', error);
-          }
+          await checkAdminStatus(data.session.user.id);
         }
       }
       
       return { error: null, success: true };
     } catch (error) {
       console.error('Error verifying email:', error);
+      return { error: error as Error, success: false };
+    }
+  };
+  
+  // Exchange auth code for session
+  const exchangeAuthCode = async (code: string) => {
+    try {
+      console.log('[Auth Debug] Exchanging auth code for session');
+      
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) {
+        console.error('Error exchanging code for session:', error);
+        return { error, success: false };
+      }
+      
+      console.log('[Auth Debug] Code exchange successful, updating session');
+      
+      // Update the local state with the new session
+      if (data?.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        
+        // Check if user is admin
+        if (data.session.user) {
+          await checkAdminStatus(data.session.user.id);
+        }
+      }
+      
+      return { error: null, success: true };
+    } catch (error) {
+      console.error('Error exchanging auth code:', error);
       return { error: error as Error, success: false };
     }
   };
@@ -248,6 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     updatePassword,
     verifyEmail,
+    exchangeAuthCode,
     isAdmin,
   };
 

@@ -21,25 +21,31 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ children, adminO
   const hasConfirmationCode = !!code;
 
   useEffect(() => {
+    // If there's a confirmation code, set processing state to true
+    // This prevents redirect until the dashboard page can handle the code
+    if (hasConfirmationCode) {
+      console.log("[ProtectedRoute Debug] Detected confirmation code, allowing access");
+      setIsProcessingCode(true);
+      // Don't redirect while processing code
+      return;
+    }
+    
     // If not loading and no user, and no confirmation code, redirect to login
-    if (!isLoading && !user && !hasConfirmationCode && !isProcessingCode) {
+    if (!isLoading && !user && !isProcessingCode) {
+      console.log("[ProtectedRoute Debug] No auth, redirecting to login");
       router.push('/login');
     }
 
     // If admin only and user is not admin, redirect to dashboard
     if (!isLoading && user && adminOnly && !isAdmin) {
+      console.log("[ProtectedRoute Debug] User not admin, redirecting to dashboard");
       router.push('/dashboard');
-    }
-    
-    // If there's a confirmation code, set processing state to true
-    // This prevents redirect until the dashboard page can handle the code
-    if (hasConfirmationCode) {
-      setIsProcessingCode(true);
     }
   }, [user, isLoading, router, adminOnly, isAdmin, hasConfirmationCode, isProcessingCode]);
 
   // Show loading state while checking authentication
   if (isLoading || (hasConfirmationCode && isProcessingCode)) {
+    console.log("[ProtectedRoute Debug] Showing loading state", { isLoading, hasConfirmationCode, isProcessingCode });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">

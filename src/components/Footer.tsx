@@ -91,8 +91,17 @@ export default function Footer() {
         
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm mb-4 md:mb-0">
-            &copy; {currentYear} Discover Boba. All rights reserved.
+          <p className="text-gray-500 text-xs mb-4 md:mb-0">
+            &copy; {currentYear} Discover Boba. All rights reserved. Design consultation by{' '}
+            <a
+              href="https://broadleafagency.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-gray-300"
+            >
+              Broadleaf Agency
+            </a>{' '}
+            in Woodstock, GA.
           </p>
           <div className="flex space-x-6">
             <Link href="/privacy-policy" className="text-gray-400 hover:text-white text-sm">

@@ -10,6 +10,7 @@
     "lint": "next lint",
     "migrate:shops": "node scripts/migrate-shops.mjs",
     "backfill:coordinates": "node scripts/backfill-shop-coordinates.mjs",
+    "backfill:photos": "node scripts/backfill-shop-photos.mjs",
     "migrate:reviews": "node scripts/migrate-reviews.mjs",
     "migrate:validate": "node scripts/validate-migration.mjs",
     "migrate:rollback": "node scripts/rollback-migration.mjs",

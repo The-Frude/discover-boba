@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getShopBySlug, getAllTags, formatWorkingHours, createSlug } from '@/utils/data'
@@ -241,7 +240,18 @@ export default async function ShopPage({ params }: ShopPageProps) {
                   FEATURED
                 </div>
               )}
-              {/* Image container hidden temporarily */}
+              {shop.photos && shop.photos.length > 0 && (
+                <div className="relative h-64 md:h-80 w-full">
+                  <OptimizedImage
+                    src={shop.photos[0]}
+                    alt={shop.name}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 66vw"
+                  />
+                </div>
+              )}
               <div className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                   <div className="flex flex-col">

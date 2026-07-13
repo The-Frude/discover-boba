@@ -184,7 +184,7 @@ async function migrateShops() {
               working_hours: workingHours,
               menu_link: item.menu_link || '',
               order_links: item.order_links || '',
-              photos: item.photos ? [item.photos] : [],
+              photos: item.photo ? [item.photo] : [],
               tags: tags,
               about: item.about || '',
               is_premium: false,

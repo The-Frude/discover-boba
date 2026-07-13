@@ -15,9 +15,10 @@ export default async function Home() {
             alt="Boba Tea Background"
             fill
             priority
-            className="object-cover brightness-50"
+            className="object-cover"
             sizes="100vw"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
         </div>
         <div className="container-custom relative z-10 text-center text-white">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -26,19 +27,18 @@ export default async function Home() {
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
             Find the perfect bubble tea experience in your city
           </p>
-          
-          {/* Search Bar - Commented out
-          <form 
-            action="/search" 
+
+          <form
+            action="/search"
             method="get"
-            className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-lg p-2 mb-8"
+            className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-lg p-2 mb-2 shadow-lg"
           >
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 name="q"
                 placeholder="Search for boba shops..."
-                className="flex-grow px-4 py-3 rounded-md bg-white/90 text-gray-800 focus:outline-none"
+                className="flex-grow px-4 py-3 rounded-md bg-white/90 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-400"
                 required
                 minLength={2}
               />
@@ -47,7 +47,6 @@ export default async function Home() {
               </button>
             </div>
           </form>
-          */}
         </div>
       </section>
 

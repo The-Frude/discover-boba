@@ -32,66 +32,64 @@ export default function Header() {
                 className="object-cover rounded-full"
               />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">Discover Boba</span>
+            <span className="text-xl font-display font-bold text-gray-900 dark:text-white">Discover Boba</span>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/" 
-              className={`font-medium ${isActive('/') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
+            <Link
+              href="/"
+              className={`font-medium relative py-1 ${isActive('/') ? 'text-primary-600 dark:text-primary-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:rounded-full' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
             >
               Home
             </Link>
-            <Link 
-              href="/find-boba-shops" 
-              className={`font-medium ${isActive('/find-boba-shops') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
+            <Link
+              href="/find-boba-shops"
+              className={`font-medium relative py-1 ${isActive('/find-boba-shops') ? 'text-primary-600 dark:text-primary-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:rounded-full' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
             >
               Find Shops
             </Link>
-            <Link 
-              href="/faq" 
-              className={`font-medium ${isActive('/faq') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
+            <Link
+              href="/faq"
+              className={`font-medium relative py-1 ${isActive('/faq') ? 'text-primary-600 dark:text-primary-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:rounded-full' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
             >
               FAQ
             </Link>
-            <Link 
-              href="/contact" 
-              className={`font-medium ${isActive('/contact') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
+            <Link
+              href="/contact"
+              className={`font-medium relative py-1 ${isActive('/contact') ? 'text-primary-600 dark:text-primary-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-600 dark:after:bg-primary-400 after:rounded-full' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'}`}
             >
               Contact
             </Link>
-          {/* Search form commented out
-          <form 
-            onSubmit={(e: FormEvent) => {
-              e.preventDefault()
-              if (searchQuery.trim().length > 1) {
-                router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
-                setSearchQuery('')
-              }
-            }}
-            className="relative"
-          >
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 w-40 lg:w-64"
-            />
-            <button type="submit" className="absolute left-3 top-2.5">
-              <svg 
-                className="h-5 w-5 text-gray-500 dark:text-gray-400" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-          </form>
-          */}
+            <form
+              onSubmit={(e: FormEvent) => {
+                e.preventDefault()
+                if (searchQuery.trim().length > 1) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+                  setSearchQuery('')
+                }
+              }}
+              className="relative"
+            >
+              <input
+                type="text"
+                placeholder="Search shops..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 w-40 lg:w-64"
+              />
+              <button type="submit" className="absolute left-3 top-2.5" aria-label="Search">
+                <svg
+                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
           </nav>
           
           {/* Mobile Menu Button */}
@@ -114,8 +112,7 @@ export default function Header() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
-            {/* Search form commented out
-            <form 
+            <form
               onSubmit={(e: FormEvent) => {
                 e.preventDefault()
                 if (searchQuery.trim().length > 1) {
@@ -128,24 +125,23 @@ export default function Header() {
             >
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search shops..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 flex-grow"
               />
-              <button type="submit" className="absolute left-3">
-                <svg 
-                  className="h-5 w-5 text-gray-500 dark:text-gray-400" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24" 
+              <button type="submit" className="absolute left-3" aria-label="Search">
+                <svg
+                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
             </form>
-            */}
             <nav className="flex flex-col space-y-4">
               <Link 
                 href="/" 

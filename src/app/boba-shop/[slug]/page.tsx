@@ -471,9 +471,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
             {/* Map */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">Location</h2>
-              <MapView 
+              <MapView
                 address={shop.formatted_address}
                 name={shop.name}
+                latitude={shop.latitude}
+                longitude={shop.longitude}
               />
             </div>
             

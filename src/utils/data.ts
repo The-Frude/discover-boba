@@ -8,6 +8,8 @@ export interface Shop {
   formatted_address: string;
   city: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
   rating: number;
   user_ratings_total: number;
   reviews?: number;

@@ -173,6 +173,8 @@ async function migrateShops() {
               formatted_address: address,
               city: cityName, // Use the filename as the city
               state: state,
+              latitude: item.latitude ? parseFloat(item.latitude) : null,
+              longitude: item.longitude ? parseFloat(item.longitude) : null,
               rating: parseFloat(item.rating) || 0,
               user_ratings_total: parseInt(item.user_ratings_total) || 0,
               reviews_link: item.reviews_link || '',

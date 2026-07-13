@@ -1,13 +1,13 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
-import { getShopsByCity, getCities, createSlug } from '@/utils/data'
+import { getShopsByCity, getCities, GENERIC_TAGS } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
 import FilterSidebar from '@/components/FilterSidebar'
 import CityMapView from '@/components/CityMapView'
 import Pagination from '@/components/Pagination'
+import SortDropdown from '@/components/SortDropdown'
 import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
 
@@ -19,6 +19,7 @@ interface CityPageProps {
     page?: string
     tags?: string
     sort?: string
+    minRating?: string
   }
 }
 
@@ -67,15 +68,28 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   // Get all shops for this city with optional sorting
   const allShops = await getShopsByCity(city.name, searchParamsData?.sort || 'rating')
   
-  // Extract all unique tags from shops
-  const allTags = [...new Set(allShops.flatMap(shop => shop.tags))]
+  // Count how many shops carry each tag, then drop tags every shop has
+  // (e.g. "Bubble Tea", "Takeout") - they can never narrow the results,
+  // so offering them as filters is just clutter.
+  const tagCounts = new Map<string, number>()
+  allShops.forEach(shop => {
+    shop.tags.forEach(tag => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1))
+  })
+  const filterableTags = Array.from(tagCounts.entries())
+    .filter(([tag, count]) => count < allShops.length && !GENERIC_TAGS.includes(tag))
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag, count]) => ({ tag, count }))
+
   const selectedTagsParam = searchParamsData?.tags || ''
   const selectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
-  
-  // Filter shops by selected tags if any
-  const filteredShops = selectedTags.length > 0
-    ? allShops.filter(shop => selectedTags.some(tag => shop.tags.includes(tag)))
-    : allShops
+  const minRating = searchParamsData?.minRating ? parseFloat(searchParamsData.minRating) : 0
+
+  // A shop must match every selected filter (AND), not just one of them.
+  const filteredShops = allShops.filter(shop => {
+    const matchesTags = selectedTags.every(tag => shop.tags.includes(tag))
+    const matchesRating = shop.rating >= minRating
+    return matchesTags && matchesRating
+  })
   
   // Pagination
   const itemsPerPage = 10 // Number of shops per page
@@ -117,20 +131,25 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
             {/* Filter Sidebar */}
             <div className="lg:w-1/4">
               <Suspense fallback={<div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">Loading filters...</div>}>
-                <FilterSidebar 
-                  tags={allTags} 
-                  citySlug={city.slug} 
+                <FilterSidebar
+                  tags={filterableTags}
+                  citySlug={city.slug}
                 />
               </Suspense>
             </div>
-            
+
             {/* Shop Listings */}
             <div className="lg:w-3/4">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold">
                   {filteredShops.length} Shops Found
                 </h2>
-                <JumpToMapButton />
+                <div className="flex items-center gap-4">
+                  <Suspense fallback={null}>
+                    <SortDropdown totalItems={filteredShops.length} />
+                  </Suspense>
+                  <JumpToMapButton />
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -141,12 +160,14 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
               
               {/* Pagination */}
               <Suspense fallback={<div className="flex justify-center mt-8">Loading pagination...</div>}>
-                <Pagination 
+                <Pagination
                   totalItems={filteredShops.length}
                   itemsPerPage={itemsPerPage}
                   currentPage={currentPage}
                   citySlug={city.slug}
                   selectedTags={selectedTags}
+                  sort={searchParamsData?.sort}
+                  minRating={searchParamsData?.minRating}
                 />
               </Suspense>
               

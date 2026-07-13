@@ -33,6 +33,18 @@ export interface Shop {
   owner_id?: string;
 }
 
+// Tags applied to every shop by extractTags() regardless of its actual
+// data, so they carry no filtering value and are deprioritized on shop
+// cards and excluded from filter options (see extractTags below).
+export const GENERIC_TAGS = [
+  'Bubble Tea',
+  'Milk Tea',
+  'Tapioca Pearls',
+  'Boba',
+  'Takeout',
+  'Dine-in',
+]
+
 export interface City {
   name: string;
   slug: string;
@@ -45,15 +57,8 @@ export interface City {
 export function extractTags(aboutField: string): string[] {
   try {
     // Default tags that are common for boba shops
-    const defaultTags = [
-      'Bubble Tea', 
-      'Milk Tea', 
-      'Tapioca Pearls', 
-      'Boba', 
-      'Takeout', 
-      'Dine-in'
-    ];
-    
+    const defaultTags = GENERIC_TAGS;
+
     // If the about field is empty or invalid, return default tags
     if (!aboutField || aboutField === '{}') {
       return defaultTags;

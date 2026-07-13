@@ -10,14 +10,18 @@ interface PaginationProps {
   currentPage: number
   citySlug: string
   selectedTags?: string[]
+  sort?: string
+  minRating?: string
 }
 
-function PaginationContent({ 
-  totalItems, 
-  itemsPerPage, 
-  currentPage, 
+function PaginationContent({
+  totalItems,
+  itemsPerPage,
+  currentPage,
   citySlug,
-  selectedTags = []
+  selectedTags = [],
+  sort,
+  minRating
 }: PaginationProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   
@@ -60,16 +64,20 @@ function PaginationContent({
     return pages
   }
   
-  // Generate URL for a specific page
+  // Generate URL for a specific page, preserving the other active filters
   const getPageUrl = (page: number) => {
-    let url = `/find-boba-shops/${citySlug}?page=${page}`
-    
-    // Add tags if any
+    const params = new URLSearchParams()
+    params.set('page', String(page))
     if (selectedTags.length > 0) {
-      url += `&tags=${selectedTags.join(',')}`
+      params.set('tags', selectedTags.join(','))
     }
-    
-    return url
+    if (sort) {
+      params.set('sort', sort)
+    }
+    if (minRating) {
+      params.set('minRating', minRating)
+    }
+    return `/find-boba-shops/${citySlug}?${params.toString()}`
   }
   
   const pageNumbers = getPageNumbers()

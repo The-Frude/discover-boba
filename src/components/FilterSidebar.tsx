@@ -1,75 +1,108 @@
 'use client'
 
-import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState } from 'react';
 import { withSuspense } from '@/components/hoc/withSuspense';
 
+interface TagOption {
+  tag: string
+  count: number
+}
+
 interface FilterSidebarProps {
-  tags: string[]
+  tags: TagOption[]
   citySlug: string
 }
+
+// Maps known tags to a display category. Anything not listed here falls
+// back to "More Filters" so new/unexpected tags still show up somewhere.
+const TAG_CATEGORIES: Record<string, string> = {
+  'Coffee': 'Menu & Dietary',
+  'Vegetarian options': 'Menu & Dietary',
+  'Vegan options': 'Menu & Dietary',
+  'Gluten-free options': 'Menu & Dietary',
+  'Organic': 'Menu & Dietary',
+  'Fruit Teas': 'Menu & Dietary',
+  'Matcha': 'Menu & Dietary',
+  'Taro': 'Menu & Dietary',
+  'Smoothies': 'Menu & Dietary',
+  'Slushies': 'Menu & Dietary',
+  'Delivery': 'Service',
+  'No-contact delivery': 'Service',
+  'Curbside pickup': 'Service',
+  'Accepts credit cards': 'Service',
+  'Wheelchair accessible': 'Accessibility & Amenities',
+  'Family-friendly': 'Accessibility & Amenities',
+  'Outdoor seating': 'Accessibility & Amenities',
+  'Indoor seating': 'Accessibility & Amenities',
+  'Free Wi-Fi': 'Accessibility & Amenities',
+  'Parking available': 'Accessibility & Amenities',
+}
+
+const CATEGORY_ORDER = ['Menu & Dietary', 'Service', 'Accessibility & Amenities', 'More Filters']
+
+const RATING_OPTIONS = [
+  { label: 'Any rating', value: '' },
+  { label: '4.5+ stars', value: '4.5' },
+  { label: '4.0+ stars', value: '4.0' },
+  { label: '3.5+ stars', value: '3.5' },
+]
 
 function FilterSidebarContent({ tags, citySlug }: FilterSidebarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
-  // Get currently selected tags from URL
-  const selectedTagsParam = searchParams.get('tags')
-  const initialSelectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
-  const [isTagListExpanded, setIsTagListExpanded] = useState(false); // Renamed for clarity
-  const [isMobileFilterVisible, setIsMobileFilterVisible] = useState(false); // State for mobile visibility
+  const [isMobileFilterVisible, setIsMobileFilterVisible] = useState(false);
 
-  // Group tags by category (simplified approach)
-  const groupedTags: Record<string, string[]> = {
-    'Service Options': [],
-    'Accessibility': [],
-    'Features': [],
-    'Other': [],
-  }
-  
-  // Categorize tags (simplified logic)
-  tags.forEach(tag => {
-    if (tag.includes('delivery') || tag.includes('pickup') || tag.includes('Takeout') || tag.includes('Dine-in')) {
-      groupedTags['Service Options'].push(tag)
-    } else if (tag.includes('accessible') || tag.includes('Accessibility')) {
-      groupedTags['Accessibility'].push(tag)
-    } else if (tag.includes('selection') || tag.includes('options')) {
-      groupedTags['Features'].push(tag)
-    } else {
-      groupedTags['Other'].push(tag)
-    }
+  const selectedTagsParam = searchParams.get('tags')
+  const selectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
+  const minRating = searchParams.get('minRating') || ''
+  const hasActiveFilters = selectedTags.length > 0 || minRating !== ''
+
+  // Group tags into display categories, preserving each tag's count.
+  const groupedTags: Record<string, TagOption[]> = {}
+  tags.forEach(({ tag, count }) => {
+    const category = TAG_CATEGORIES[tag] || 'More Filters'
+    groupedTags[category] = groupedTags[category] || []
+    groupedTags[category].push({ tag, count })
   })
-  
-  // Toggle tag selection
+
+  const navigate = (mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams.toString())
+    mutate(params)
+    params.delete('page') // any filter change invalidates the current page
+    const qs = params.toString()
+    router.push(`/find-boba-shops/${citySlug}${qs ? `?${qs}` : ''}`)
+  }
+
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => {
-      if (prev.includes(tag)) {
-        return prev.filter(t => t !== tag)
+    navigate(params => {
+      const next = selectedTags.includes(tag)
+        ? selectedTags.filter(t => t !== tag)
+        : [...selectedTags, tag]
+      if (next.length > 0) {
+        params.set('tags', next.join(','))
       } else {
-        return [...prev, tag]
+        params.delete('tags')
       }
     })
   }
-  
-  // Apply filters
-  const applyFilters = () => {
-    if (selectedTags.length > 0) {
-      router.push(`/find-boba-shops/${citySlug}?tags=${selectedTags.join(',')}`)
-    }
-    setIsMobileFilterVisible(false); // Collapse after applying
-  };
 
-  // Clear filters
+  const setRating = (value: string) => {
+    navigate(params => {
+      if (value) {
+        params.set('minRating', value)
+      } else {
+        params.delete('minRating')
+      }
+    })
+  }
+
   const clearFilters = () => {
-    setSelectedTags([]);
-    router.push(`/find-boba-shops/${citySlug}`);
-    setIsMobileFilterVisible(false); // Collapse after clearing
-  };
-
-  // Display only the first 10 tags by default
-  // const displayedTags = isTagListExpanded ? tags : tags.slice(0, 10); // Keep original logic if needed, but seems unused now
+    navigate(params => {
+      params.delete('tags')
+      params.delete('minRating')
+    })
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -80,68 +113,111 @@ function FilterSidebarContent({ tags, citySlug }: FilterSidebarProps) {
         aria-expanded={isMobileFilterVisible}
         aria-controls="filter-content"
       >
-        <span>Filter Results</span>
-        {/* Add a simple chevron icon */}
+        <span>Filter Results{hasActiveFilters ? ` (${selectedTags.length + (minRating ? 1 : 0)})` : ''}</span>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 transition-transform ${isMobileFilterVisible ? 'rotate-180' : ''}`}>
           <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
 
-      {/* --- Filter Content Wrapper --- */}
       <div
         id="filter-content"
-        className={`${isMobileFilterVisible ? 'block' : 'hidden'} md:block`} // Logic for visibility
+        className={`${isMobileFilterVisible ? 'block' : 'hidden'} md:block`}
       >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold">Filters</h3>
-          <button
-            onClick={clearFilters}
-          className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
-        >
-          Clear All
-        </button>
-      </div>
-      
-      {/* Filter by tag categories */}
-      {Object.entries(groupedTags).map(([category, categoryTags]) => (
-        categoryTags.length > 0 && (
-          <div key={category} className="mb-6">
-            <h4 className="font-medium mb-3">{category}</h4>
-            <div className="space-y-2">
-              {categoryTags.map(tag => (
-                <div key={tag} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`tag-${tag}`}
-                    checked={selectedTags.includes(tag)}
-                    onChange={() => toggleTag(tag)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor={`tag-${tag}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    {tag}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      ))}
-      
-      {/* Removed the old "Show More/Less" button as filters are now grouped */}
-      {/* If needed, similar logic could be applied within each category */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              Clear All
+            </button>
+          )}
+        </div>
 
-      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={applyFilters}
-          className="w-full btn-primary"
-        >
-          Apply Filters
-        </button>
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {minRating && (
+              <button
+                onClick={() => setRating('')}
+                className="tag inline-flex items-center gap-1 hover:bg-primary-200 dark:hover:bg-primary-800"
+              >
+                {minRating}+ stars
+                <span aria-hidden="true">&times;</span>
+              </button>
+            )}
+            {selectedTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className="tag inline-flex items-center gap-1 hover:bg-primary-200 dark:hover:bg-primary-800"
+              >
+                {tag}
+                <span aria-hidden="true">&times;</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Rating filter */}
+        <div className="mb-6">
+          <h4 className="font-medium mb-3">Rating</h4>
+          <div className="space-y-2">
+            {RATING_OPTIONS.map(option => (
+              <div key={option.value} className="flex items-center">
+                <input
+                  type="radio"
+                  id={`rating-${option.value || 'any'}`}
+                  name="minRating"
+                  checked={minRating === option.value}
+                  onChange={() => setRating(option.value)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                />
+                <label htmlFor={`rating-${option.value || 'any'}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tag filters by category */}
+        {CATEGORY_ORDER.map(category => {
+          const categoryTags = groupedTags[category]
+          if (!categoryTags || categoryTags.length === 0) return null
+          return (
+            <div key={category} className="mb-6">
+              <h4 className="font-medium mb-3">{category}</h4>
+              <div className="space-y-2">
+                {categoryTags.map(({ tag, count }) => (
+                  <div key={tag} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`tag-${tag}`}
+                        checked={selectedTags.includes(tag)}
+                        onChange={() => toggleTag(tag)}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`tag-${tag}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        {tag}
+                      </label>
+                    </div>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        {tags.length === 0 && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">No additional filters available for this city.</p>
+        )}
       </div>
-      </div> {/* End of filter-content wrapper */}
     </div>
   );
 }
 
-// Export the component wrapped with Suspense
 export default withSuspense(FilterSidebarContent);

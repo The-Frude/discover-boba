@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Shop } from '@/utils/data'
+import { Shop, GENERIC_TAGS } from '@/utils/data'
 import OptimizedImage from './OptimizedImage'
 
 interface ShopCardProps {
@@ -8,6 +8,14 @@ interface ShopCardProps {
 
 export default function ShopCard({ shop }: ShopCardProps) {
   const isPremium = shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date();
+
+  // Every shop carries the same handful of generic tags (Bubble Tea,
+  // Takeout, etc.), so surface the tags that actually distinguish this
+  // shop first, and only fall back to generic ones if there's nothing else.
+  const distinguishingTags = shop.tags.filter(tag => !GENERIC_TAGS.includes(tag))
+  const displayTags = distinguishingTags.length > 0
+    ? distinguishingTags
+    : shop.tags;
   
   return (
     <div className={`card group ${isPremium ? 'border-2 border-yellow-400 dark:border-yellow-600 relative' : ''}`}>
@@ -37,14 +45,14 @@ export default function ShopCard({ shop }: ShopCardProps) {
         
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {shop.tags.slice(0, 3).map((tag, index) => (
+          {displayTags.slice(0, 3).map((tag, index) => (
             <span key={index} className="tag">
               {tag}
             </span>
           ))}
-          {shop.tags.length > 3 && (
+          {displayTags.length > 3 && (
             <span className="tag bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-              +{shop.tags.length - 3} more
+              +{displayTags.length - 3} more
             </span>
           )}
         </div>

@@ -79,9 +79,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             alt="Search Results"
             fill
             priority
-            className="object-cover brightness-50"
+            className="object-cover"
             sizes="100vw"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
         </div>
         <div className="container-custom relative z-10 text-center text-white">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">

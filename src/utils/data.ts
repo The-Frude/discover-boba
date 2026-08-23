@@ -228,6 +228,61 @@ export function formatWorkingHours(workingHours: any): string[] {
   }
 }
 
+const SCHEMA_DAYS: Record<string, string> = {
+  Monday: 'https://schema.org/Monday',
+  Tuesday: 'https://schema.org/Tuesday',
+  Wednesday: 'https://schema.org/Wednesday',
+  Thursday: 'https://schema.org/Thursday',
+  Friday: 'https://schema.org/Friday',
+  Saturday: 'https://schema.org/Saturday',
+  Sunday: 'https://schema.org/Sunday',
+}
+
+function to24HourTime(time: string): string | null {
+  const match = time.trim().match(/^(\d{1,2}):?(\d{2})?\s*([AaPp][Mm])?$/)
+  if (!match) return null
+  let hour = parseInt(match[1], 10)
+  const minute = match[2] || '00'
+  const meridiem = match[3]?.toUpperCase()
+  if (meridiem === 'PM' && hour !== 12) hour += 12
+  if (meridiem === 'AM' && hour === 12) hour = 0
+  if (hour > 23) return null
+  return `${hour.toString().padStart(2, '0')}:${minute}`
+}
+
+// Best-effort conversion of "Monday: 9:00 AM – 9:00 PM" style hours strings
+// into schema.org OpeningHoursSpecification entries. Lines that don't match
+// a recognizable day/time-range pattern (e.g. "Closed") are skipped rather
+// than guessed at.
+export function parseOpeningHoursSpec(hours: string[]): Array<Record<string, string>> {
+  const specs: Array<Record<string, string>> = []
+
+  for (const line of hours) {
+    const [dayRaw, timeRaw] = line.split(': ')
+    if (!dayRaw || !timeRaw) continue
+
+    const dayOfWeek = SCHEMA_DAYS[dayRaw.trim()]
+    if (!dayOfWeek) continue
+    if (/closed/i.test(timeRaw)) continue
+
+    const parts = timeRaw.split(/–|—|-/).map(s => s.trim())
+    if (parts.length !== 2) continue
+
+    const opens = to24HourTime(parts[0])
+    const closes = to24HourTime(parts[1])
+    if (!opens || !closes) continue
+
+    specs.push({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek,
+      opens,
+      closes,
+    })
+  }
+
+  return specs
+}
+
 // Function to create a slug from a string
 export function createSlug(text: string): string {
   return text

@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'Contact Us | Discover Boba',
   description: 'Get in touch with the Discover Boba team. Send us feedback, report issues, or suggest new cities to add to our database.',
   keywords: 'contact, feedback, boba tea, bubble tea, suggestions, report issues',
+  alternates: {
+    canonical: '/contact',
+  },
 }
 
 export default function ContactPage() {

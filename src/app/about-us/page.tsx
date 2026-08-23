@@ -5,6 +5,9 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'About Us | Discover Boba',
   description: 'Learn more about DiscoverBoba.com and our mission to help you find the best bubble tea shops near you.',
+  alternates: {
+    canonical: '/about-us',
+  },
 };
 
 const AboutUsPage: React.FC = () => {

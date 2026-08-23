@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { getShopsByCity, getCities, GENERIC_TAGS } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
 import FilterSidebar from '@/components/FilterSidebar'
@@ -10,6 +11,7 @@ import Pagination from '@/components/Pagination'
 import SortDropdown from '@/components/SortDropdown'
 import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
+import JsonLd from '@/components/JsonLd'
 
 interface CityPageProps {
   params: {
@@ -40,6 +42,11 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
     title: `Best Boba Tea Shops in ${city.name}, ${city.state} | Discover Boba`,
     description: `Find the top-rated bubble tea shops in ${city.name}, ${city.state}. Browse reviews, ratings, and details for the best boba experience.`,
     keywords: `boba, bubble tea, ${city.name}, ${city.state}, milk tea, tapioca, pearls`,
+    alternates: {
+      // Always the clean city URL, regardless of ?page/tags/sort/minRating,
+      // so paginated/filtered views aren't treated as duplicate pages.
+      canonical: `/find-boba-shops/${city.slug}`,
+    },
   }
 }
 
@@ -99,9 +106,56 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedShops = filteredShops.slice(startIndex, endIndex)
-  
+
+  const baseUrl = 'https://www.discoverboba.com'
+  const cityUrl = `${baseUrl}/find-boba-shops/${city.slug}`
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl },
+      { '@type': 'ListItem', position: 2, name: city.name, item: cityUrl },
+    ],
+  }
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: paginatedShops.map((shop, index) => ({
+      '@type': 'ListItem',
+      position: startIndex + index + 1,
+      url: `${baseUrl}/boba-shop/${shop.slug}`,
+      name: shop.name,
+    })),
+  }
+
   return (
     <main className="min-h-screen">
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={itemListJsonLd} />
+
+      {/* Breadcrumbs */}
+      <div className="container-custom pt-6">
+        <nav className="flex" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-1 md:space-x-3">
+            <li className="inline-flex items-center">
+              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
+                Home
+              </Link>
+            </li>
+            <li aria-current="page">
+              <div className="flex items-center">
+                <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                </svg>
+                <span className="text-gray-500 dark:text-gray-400 ml-1 md:ml-2">{city.name}</span>
+              </div>
+            </li>
+          </ol>
+        </nav>
+      </div>
+
       {/* Hero Section */}
       <section className="relative h-[40vh] min-h-[300px] flex items-center justify-center">
         <div className="absolute inset-0 z-0">

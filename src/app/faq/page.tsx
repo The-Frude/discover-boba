@@ -1,11 +1,15 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import OptimizedImage from '@/components/OptimizedImage'
+import JsonLd from '@/components/JsonLd'
 
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions About Boba Tea | Discover Boba',
   description: 'Learn everything you need to know about boba tea, bubble tea, and tapioca pearls. Find answers to common questions about this popular Taiwanese drink.',
   keywords: 'boba, bubble tea, tapioca pearls, milk tea, FAQ, questions, what is boba, boba tea ingredients',
+  alternates: {
+    canonical: '/faq',
+  },
 }
 
 export default function FAQPage() {
@@ -52,8 +56,22 @@ export default function FAQPage() {
     }
   ]
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  }
+
   return (
     <main className="min-h-screen">
+      <JsonLd data={faqJsonLd} />
       {/* Hero Section */}
       <section className="relative h-[40vh] min-h-[300px] flex items-center justify-center">
         <div className="absolute inset-0 z-0">

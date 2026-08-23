@@ -1,15 +1,100 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getShopBySlug, getAllTags, formatWorkingHours, createSlug, getShopDescription } from '@/utils/data'
+import { getShopBySlug, getAllTags, formatWorkingHours, getShopDescription, parseOpeningHoursSpec } from '@/utils/data'
 import MapView from '@/components/MapView'
 import OptimizedImage from '@/components/OptimizedImage'
 import ReviewsSection from '@/components/ReviewsSection'
+import JsonLd from '@/components/JsonLd'
+
+const SITE_URL = 'https://www.discoverboba.com'
 
 interface ShopPageProps {
   params: {
     slug: string
   }
+}
+
+const removeTrailingComma = (str: string) => (str.endsWith(',') ? str.slice(0, -1) : str)
+
+// Maps a shop's city (which is frequently a suburb in the source data) to
+// the metro-area page it actually appears on, so the breadcrumb links
+// somewhere real instead of a 404 for a suburb with no city page of its own.
+function getMainCity(cityName: string, address: string): { name: string; path: string } {
+  let mainCityName = cityName;
+  let mainCityPath = cityName.toLowerCase();
+
+  if (cityName === "Washington" || address.includes("Washington DC")) {
+    return { name: "Washington", path: "washingtondc" };
+  }
+
+  const nyBoroughs = ['Queens', 'Brooklyn', 'Bronx', 'Manhattan', 'Staten Island'];
+  if (cityName === 'York' ||
+      mainCityPath === 'york' ||
+      nyBoroughs.includes(cityName) ||
+      address.includes('New York') ||
+      address.includes('NY')) {
+    return { name: "New York", path: "new-york" };
+  }
+
+  const citySuburbMap = [
+    { suburb: 'Decatur', mainCity: 'Atlanta', path: 'atlanta' },
+    { suburb: 'Marietta', mainCity: 'Atlanta', path: 'atlanta' },
+    { suburb: 'Alpharetta', mainCity: 'Atlanta', path: 'atlanta' },
+    { suburb: 'Duluth', mainCity: 'Atlanta', path: 'atlanta' },
+    { suburb: 'Sandy Springs', mainCity: 'Atlanta', path: 'atlanta' },
+    { suburb: 'Roswell', mainCity: 'Atlanta', path: 'atlanta' },
+
+    { suburb: 'Evanston', mainCity: 'Chicago', path: 'chicago' },
+    { suburb: 'Oak Park', mainCity: 'Chicago', path: 'chicago' },
+    { suburb: 'Naperville', mainCity: 'Chicago', path: 'chicago' },
+    { suburb: 'Schaumburg', mainCity: 'Chicago', path: 'chicago' },
+
+    { suburb: 'Plano', mainCity: 'Dallas', path: 'dallas' },
+    { suburb: 'Irving', mainCity: 'Dallas', path: 'dallas' },
+    { suburb: 'Arlington TX', mainCity: 'Dallas', path: 'dallas' },
+    { suburb: 'Frisco', mainCity: 'Dallas', path: 'dallas' },
+    { suburb: 'Richardson', mainCity: 'Dallas', path: 'dallas' },
+
+    { suburb: 'Camden', mainCity: 'Philadelphia', path: 'philadelphia' },
+    { suburb: 'Cherry Hill', mainCity: 'Philadelphia', path: 'philadelphia' },
+    { suburb: 'King of Prussia', mainCity: 'Philadelphia', path: 'philadelphia' },
+
+    { suburb: 'Bellevue', mainCity: 'Seattle', path: 'seattle' },
+    { suburb: 'Redmond', mainCity: 'Seattle', path: 'seattle' },
+    { suburb: 'Kirkland', mainCity: 'Seattle', path: 'seattle' },
+    { suburb: 'Renton', mainCity: 'Seattle', path: 'seattle' },
+
+    { suburb: 'Arlington VA', mainCity: 'Washington', path: 'washingtondc' },
+    { suburb: 'Alexandria', mainCity: 'Washington', path: 'washingtondc' },
+    { suburb: 'Bethesda', mainCity: 'Washington', path: 'washingtondc' },
+    { suburb: 'Silver Spring', mainCity: 'Washington', path: 'washingtondc' },
+  ];
+
+  const exactMatch = citySuburbMap.find(item =>
+    item.suburb.toLowerCase() === cityName.toLowerCase()
+  );
+
+  if (exactMatch) {
+    return { name: exactMatch.mainCity, path: exactMatch.path };
+  }
+
+  for (const mapping of citySuburbMap) {
+    if (mapping.suburb === 'Arlington VA' && address.includes('Arlington') &&
+        (address.includes('VA') || address.includes('Virginia'))) {
+      return { name: mapping.mainCity, path: mapping.path };
+    }
+    else if (mapping.suburb === 'Arlington TX' && address.includes('Arlington') &&
+            (address.includes('TX') || address.includes('Texas'))) {
+      return { name: mapping.mainCity, path: mapping.path };
+    }
+    else if (mapping.suburb !== 'Arlington VA' && mapping.suburb !== 'Arlington TX' &&
+            address.includes(mapping.suburb)) {
+      return { name: mapping.mainCity, path: mapping.path };
+    }
+  }
+
+  return { name: mainCityName, path: mainCityPath };
 }
 
 export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
@@ -28,6 +113,9 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
     title: `${shop.name} - Boba Tea Shop in ${shop.city}, ${shop.state} | Discover Boba`,
     description: `Visit ${shop.name} in ${shop.city}, ${shop.state}. Check out their menu, hours, and reviews for the perfect bubble tea experience.`,
     keywords: `boba, bubble tea, ${shop.name}, ${shop.city}, ${shop.state}, ${shop.tags.join(', ')}`,
+    alternates: {
+      canonical: `/boba-shop/${shop.slug}`,
+    },
   }
 }
 
@@ -82,9 +170,55 @@ export default async function ShopPage({ params }: ShopPageProps) {
   } else if (shop.working_hours) {
     hours = formatWorkingHours(shop.working_hours);
   }
-  
+
+  // Resolve the breadcrumb's city name/path once so the visible breadcrumb
+  // and the BreadcrumbList JSON-LD can't drift out of sync with each other.
+  const initialCityName = shop.city || shop.formatted_address.split(',')[0];
+  const mainCity = getMainCity(initialCityName, shop.formatted_address);
+  const breadcrumbCityName = removeTrailingComma(mainCity.name);
+  const breadcrumbCityPath = removeTrailingComma(mainCity.path);
+
+  const shopUrl = `${SITE_URL}/boba-shop/${shop.slug}`
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: breadcrumbCityName, item: `${SITE_URL}/find-boba-shops/${breadcrumbCityPath}` },
+      { '@type': 'ListItem', position: 3, name: shop.name, item: shopUrl },
+    ],
+  }
+
+  const localBusinessJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'CafeOrCoffeeShop',
+    name: shop.name,
+    url: shopUrl,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: shop.formatted_address,
+      addressLocality: shop.city,
+      addressRegion: shop.state,
+    },
+  }
+  if (shop.formatted_phone_number) localBusinessJsonLd.telephone = shop.formatted_phone_number
+  if (shop.photos && shop.photos.length > 0) localBusinessJsonLd.image = shop.photos[0]
+  const openingHoursSpec = parseOpeningHoursSpec(hours)
+  if (openingHoursSpec.length > 0) localBusinessJsonLd.openingHoursSpecification = openingHoursSpec
+  // Never emit a rating with a zero review count - matches the Priority 2 fix.
+  if (reviewCount > 0 && shop.rating > 0) {
+    localBusinessJsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: shop.rating,
+      reviewCount,
+    }
+  }
+
   return (
     <main className="min-h-screen py-12">
+      <JsonLd data={localBusinessJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <div className="container-custom">
         {/* Breadcrumbs */}
         <div className="mb-6">
@@ -100,123 +234,9 @@ export default async function ShopPage({ params }: ShopPageProps) {
                   <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                   </svg>
-                  {/* Helper function to handle city names and paths for breadcrumbs */}
-                  {(() => {
-                    // Remove trailing comma from a string
-                    const removeTrailingComma = (str: string) => {
-                      return str.endsWith(',') ? str.slice(0, -1) : str;
-                    };
-                    
-                    // Map suburbs to their main cities
-                    const getMainCity = (cityName: string, address: string): { name: string; path: string } => {
-                      // Default to the original city
-                      let mainCityName = cityName;
-                      let mainCityPath = cityName.toLowerCase();
-                      
-                      // Special case for Washington DC
-                      if (cityName === "Washington" || address.includes("Washington DC")) {
-                        return { name: "Washington", path: "washingtondc" };
-                      }
-                      
-                      // Special case for New York and its boroughs
-                      const nyBoroughs = ['Queens', 'Brooklyn', 'Bronx', 'Manhattan', 'Staten Island'];
-                      if (cityName === 'York' || 
-                          mainCityPath === 'york' || 
-                          nyBoroughs.includes(cityName) || 
-                          address.includes('New York') || 
-                          address.includes('NY')) {
-                        return { name: "New York", path: "new-york" };
-                      }
-                      
-                      // Define city-suburb mappings
-                      const citySuburbMap = [
-                        // Atlanta and suburbs
-                        { suburb: 'Decatur', mainCity: 'Atlanta', path: 'atlanta' },
-                        { suburb: 'Marietta', mainCity: 'Atlanta', path: 'atlanta' },
-                        { suburb: 'Alpharetta', mainCity: 'Atlanta', path: 'atlanta' },
-                        { suburb: 'Duluth', mainCity: 'Atlanta', path: 'atlanta' },
-                        { suburb: 'Sandy Springs', mainCity: 'Atlanta', path: 'atlanta' },
-                        { suburb: 'Roswell', mainCity: 'Atlanta', path: 'atlanta' },
-                        
-                        // Chicago and suburbs
-                        { suburb: 'Evanston', mainCity: 'Chicago', path: 'chicago' },
-                        { suburb: 'Oak Park', mainCity: 'Chicago', path: 'chicago' },
-                        { suburb: 'Naperville', mainCity: 'Chicago', path: 'chicago' },
-                        { suburb: 'Schaumburg', mainCity: 'Chicago', path: 'chicago' },
-                        
-                        // Dallas and suburbs
-                        { suburb: 'Plano', mainCity: 'Dallas', path: 'dallas' },
-                        { suburb: 'Irving', mainCity: 'Dallas', path: 'dallas' },
-                        { suburb: 'Arlington TX', mainCity: 'Dallas', path: 'dallas' }, // Specify TX to differentiate
-                        { suburb: 'Frisco', mainCity: 'Dallas', path: 'dallas' },
-                        { suburb: 'Richardson', mainCity: 'Dallas', path: 'dallas' },
-                        
-                        // Philadelphia and suburbs
-                        { suburb: 'Camden', mainCity: 'Philadelphia', path: 'philadelphia' },
-                        { suburb: 'Cherry Hill', mainCity: 'Philadelphia', path: 'philadelphia' },
-                        { suburb: 'King of Prussia', mainCity: 'Philadelphia', path: 'philadelphia' },
-                        
-                        // Seattle and suburbs
-                        { suburb: 'Bellevue', mainCity: 'Seattle', path: 'seattle' },
-                        { suburb: 'Redmond', mainCity: 'Seattle', path: 'seattle' },
-                        { suburb: 'Kirkland', mainCity: 'Seattle', path: 'seattle' },
-                        { suburb: 'Renton', mainCity: 'Seattle', path: 'seattle' },
-                        
-                        // Washington DC and suburbs
-                        { suburb: 'Arlington VA', mainCity: 'Washington', path: 'washingtondc' }, // Specify VA to differentiate
-                        { suburb: 'Alexandria', mainCity: 'Washington', path: 'washingtondc' },
-                        { suburb: 'Bethesda', mainCity: 'Washington', path: 'washingtondc' },
-                        { suburb: 'Silver Spring', mainCity: 'Washington', path: 'washingtondc' },
-                      ];
-                      
-                      // Check if the city matches any suburb exactly
-                      const exactMatch = citySuburbMap.find(item => 
-                        item.suburb.toLowerCase() === cityName.toLowerCase()
-                      );
-                      
-                      if (exactMatch) {
-                        return { name: exactMatch.mainCity, path: exactMatch.path };
-                      }
-                      
-                      // Check if the address contains any of the suburbs
-                      for (const mapping of citySuburbMap) {
-                        // For Arlington, we need to check if it's Arlington, VA (Washington) or Arlington, TX (Dallas)
-                        if (mapping.suburb === 'Arlington VA' && address.includes('Arlington') && 
-                            (address.includes('VA') || address.includes('Virginia'))) {
-                          return { name: mapping.mainCity, path: mapping.path };
-                        }
-                        else if (mapping.suburb === 'Arlington TX' && address.includes('Arlington') && 
-                                (address.includes('TX') || address.includes('Texas'))) {
-                          return { name: mapping.mainCity, path: mapping.path };
-                        }
-                        // For other suburbs, just check if they appear in the address
-                        else if (mapping.suburb !== 'Arlington VA' && mapping.suburb !== 'Arlington TX' && 
-                                address.includes(mapping.suburb)) {
-                          return { name: mapping.mainCity, path: mapping.path };
-                        }
-                      }
-                      
-                      // Return the original city if no match is found
-                      return { name: mainCityName, path: mainCityPath };
-                    };
-                    
-                    // Get city name and ensure no trailing comma
-                    let cityName = shop.city || shop.formatted_address.split(',')[0];
-                    
-                    // Create URL path with no trailing comma
-                    let cityPath = shop.city ? shop.city.toLowerCase() : createSlug(shop.formatted_address.split(',')[0]);
-                    
-                    // Get the main city information
-                    const mainCity = getMainCity(cityName, shop.formatted_address);
-                    cityName = removeTrailingComma(mainCity.name);
-                    cityPath = removeTrailingComma(mainCity.path);
-                    
-                    return (
-                      <Link href={`/find-boba-shops/${cityPath}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">
-                        {cityName}
-                      </Link>
-                    );
-                  })()}
+                  <Link href={`/find-boba-shops/${breadcrumbCityPath}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">
+                    {breadcrumbCityName}
+                  </Link>
                 </div>
               </li>
               <li aria-current="page">

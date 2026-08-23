@@ -20,9 +20,13 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.discoverboba.com'),
   title: 'Discover Boba - Find the Best Boba Tea Shops',
   description: 'Discover the best boba tea shops in major cities across the United States. Find your perfect bubble tea experience with our comprehensive directory.',
   keywords: 'boba, bubble tea, boba shops, bubble tea shops, boba tea, milk tea, tapioca, pearls',
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },

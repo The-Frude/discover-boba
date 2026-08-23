@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'Find Boba Tea Shops in Major Cities | Discover Boba',
   description: 'Browse our directory of boba tea shops in major cities across the United States. Find the perfect bubble tea spot near you.',
   keywords: 'boba, bubble tea, find boba shops, boba near me, bubble tea shops, milk tea, tapioca, pearls',
+  alternates: {
+    canonical: '/find-boba-shops',
+  },
 }
 
 export default async function FindShopsPage() {

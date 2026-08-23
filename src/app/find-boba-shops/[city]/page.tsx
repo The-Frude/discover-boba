@@ -12,6 +12,7 @@ import SortDropdown from '@/components/SortDropdown'
 import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
+import { CITY_INTROS } from './city-intros'
 
 interface CityPageProps {
   params: {
@@ -182,6 +183,12 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       {/* Shop Listings */}
       <section className="py-12 bg-gray-50 dark:bg-gray-900">
         <div className="container-custom">
+          {CITY_INTROS[city.slug] && (
+            <p className="text-gray-700 dark:text-gray-300 max-w-4xl mb-10 leading-relaxed">
+              {CITY_INTROS[city.slug]}
+            </p>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Filter Sidebar */}
             <div className="lg:w-1/4">

@@ -24,6 +24,8 @@ export interface Shop {
   tags: string[];
   slug: string;
   email?: string;
+  description?: string;
+  about?: string;
   menu_link?: string;
   order_links?: string;
   is_premium?: boolean;
@@ -102,6 +104,85 @@ export function extractTags(aboutField: string): string[] {
     console.error('Error extracting tags:', error);
     return [];
   }
+}
+
+// Sentence openers used to build a fallback shop blurb when the CSV-sourced
+// `description` field is empty. Picking a deterministic opener/feature/service
+// combination per shop (via a hash of its slug) avoids every page reading as
+// the exact same template while keeping the output stable across renders.
+const BLURB_OPENERS: Array<(name: string, city: string) => string> = [
+  (name, city) => `${name} is a bubble tea shop serving the ${city} area`,
+  (name, city) => `Located in ${city}, ${name} specializes in bubble tea and milk tea drinks`,
+  (name, city) => `${name} brings its own take on boba to ${city}`,
+  (name, city) => `In ${city}, ${name} is a neighborhood stop for bubble tea`,
+  (name, city) => `${name} serves bubble tea and specialty drinks in ${city}`,
+  (name, city) => `${name} is one of ${city}'s bubble tea spots`,
+]
+
+const BLURB_SERVICE_PHRASES: Record<string, string[]> = {
+  'Delivery': ['offers delivery', 'delivers to the neighborhood', 'is available for delivery'],
+  'No-contact delivery': ['offers no-contact delivery', 'delivers without contact required'],
+  'Takeout': ['offers takeout', 'is set up for quick takeout orders', 'is takeout-friendly'],
+  'Curbside pickup': ['offers curbside pickup'],
+  'Outdoor seating': ['has outdoor seating'],
+  'Dine-in': ['has a dine-in space', 'welcomes guests to dine in', 'offers seating for dine-in'],
+}
+
+const BLURB_FEATURE_LABELS: Record<string, string> = {
+  'Fruit Teas': 'fruit teas',
+  'Matcha': 'matcha drinks',
+  'Taro': 'taro flavors',
+  'Coffee': 'coffee drinks',
+  'Smoothies': 'smoothies',
+  'Slushies': 'slushies',
+}
+
+function hashString(value: string): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  }
+  return hash
+}
+
+// Builds a short, non-templated-sounding blurb from whatever data a shop
+// does have (tags, service options, city) for the ~65-85% of shops whose
+// CSV `description` column is empty.
+export function generateShopBlurb(shop: Shop): string {
+  const seed = hashString(shop.slug || shop.name || '')
+  const opener = BLURB_OPENERS[seed % BLURB_OPENERS.length](shop.name, shop.city)
+
+  const distinguishing = shop.tags.filter(tag => !GENERIC_TAGS.includes(tag))
+  const features = distinguishing
+    .map(tag => BLURB_FEATURE_LABELS[tag])
+    .filter((label): label is string => Boolean(label))
+  const services = distinguishing.filter(tag => BLURB_SERVICE_PHRASES[tag])
+
+  const clauses: string[] = []
+  if (features.length > 0) {
+    clauses.push(`with ${features.slice(0, 2).join(' and ')} on the menu`)
+  }
+  if (services.length > 0) {
+    const service = services[seed % services.length]
+    const phraseOptions = BLURB_SERVICE_PHRASES[service]
+    clauses.push(phraseOptions[seed % phraseOptions.length])
+  }
+
+  if (clauses.length === 0) {
+    return `${opener}.`
+  }
+
+  return `${opener}, ${clauses.join(', and ')}.`
+}
+
+// Returns the real Google-sourced description when present, otherwise a
+// generated fallback blurb - so every shop page has at least one sentence
+// of descriptive text instead of just structured facts.
+export function getShopDescription(shop: Shop): string {
+  if (shop.description && shop.description.trim()) {
+    return shop.description.trim()
+  }
+  return generateShopBlurb(shop)
 }
 
 // Function to extract city and state from formatted_address

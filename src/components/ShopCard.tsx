@@ -9,6 +9,11 @@ interface ShopCardProps {
 export default function ShopCard({ shop }: ShopCardProps) {
   const isPremium = shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date();
 
+  // Same zero-review guard as the shop detail page - avoids a 5-star badge
+  // backed by "0 reviews".
+  const reviewCount = shop.reviews || shop.user_ratings_total || 0
+  const hasRating = reviewCount > 0 && shop.rating > 0
+
   // Every shop carries the same handful of generic tags (Bubble Tea,
   // Takeout, etc.), so surface the tags that actually distinguish this
   // shop first, and only fall back to generic ones if there's nothing else.
@@ -34,7 +39,7 @@ export default function ShopCard({ shop }: ShopCardProps) {
             FEATURED
           </div>
         )}
-        {shop.rating > 0 && (
+        {hasRating && (
           <div className="absolute bottom-3 right-3 bg-white/95 dark:bg-gray-900/95 text-primary-600 dark:text-primary-400 font-bold px-2.5 py-1 rounded-md flex items-center shadow-sm backdrop-blur-sm">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -70,7 +75,7 @@ export default function ShopCard({ shop }: ShopCardProps) {
         <div className="flex flex-col space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {shop.user_ratings_total} reviews
+            {hasRating ? `${reviewCount} reviews` : 'No reviews yet'}
           </span>
           <Link 
             href={`/boba-shop/${shop.slug}`}

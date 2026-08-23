@@ -21,7 +21,7 @@ export default function ReviewsSection({ shop }: ReviewsSectionProps) {
   }
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+    <div id="reviews" className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h2 className="text-xl font-bold">Customer Reviews</h2>
         {!showReviewForm && (

@@ -26,6 +26,12 @@ export interface Shop {
   email?: string;
   description?: string;
   about?: string;
+  reservation_links?: string;
+  booking_appointment_link?: string;
+  facebook?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
   menu_link?: string;
   order_links?: string;
   is_premium?: boolean;

@@ -1,6 +1,12 @@
 import { MetadataRoute } from 'next'
 import { getCities, getShopsByCity } from '@/utils/data'
 
+// Without this, Next.js treats sitemap() as fully static and generates it
+// once at build time - new/removed shops never show up in sitemap.xml
+// until the next deploy. Revalidating hourly keeps it in sync with the
+// live shop data on its own.
+export const revalidate = 3600
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.discoverboba.com'
   

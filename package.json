@@ -12,6 +12,8 @@
     "backfill:coordinates": "node scripts/backfill-shop-coordinates.mjs",
     "backfill:photos": "node scripts/backfill-shop-photos.mjs",
     "backfill:descriptions": "node scripts/backfill-shop-descriptions.mjs",
+    "fix:duplicate-slugs:dry-run": "node scripts/fix-duplicate-shop-slugs.mjs --dry-run",
+    "fix:duplicate-slugs": "node scripts/fix-duplicate-shop-slugs.mjs",
     "migrate:reviews": "node scripts/migrate-reviews.mjs",
     "migrate:validate": "node scripts/validate-migration.mjs",
     "migrate:rollback": "node scripts/rollback-migration.mjs",

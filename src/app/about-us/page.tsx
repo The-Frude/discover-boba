@@ -17,6 +17,9 @@ const AboutUsPage: React.FC = () => {
         {/* Text Content Area */}
         <div className="md:w-1/2 space-y-6">
           <h1 className="text-4xl font-bold text-primary mb-6">About Us</h1>
+          <p className="text-lg font-medium text-gray-800 dark:text-gray-200">
+            Discover Boba tracks 800+ boba tea shops across 7 U.S. metro areas — Atlanta, Chicago, Dallas, New York, Philadelphia, Seattle, and Washington D.C.
+          </p>
           <p className="text-lg text-gray-700 dark:text-gray-300">
             At DiscoverBoba.com, we make it easy (and fun) to find the best bubble tea shops near you. Whether you're searching for a cozy neighborhood spot or a trendy new boba place to try with friends, our goal is to help you discover local tea shops that match your taste, your vibe, and your lifestyle. We believe bubble tea is more than just a drink—it's a connection to culture, creativity, and community.
           </p>

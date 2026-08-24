@@ -424,6 +424,29 @@ export async function getShopBySlug(slug: string): Promise<Shop | null> {
   }
 }
 
+// Returns the most recent `updated_at` across all shops, as a freshness
+// signal for the footer. Uses the existing column (auto-maintained by the
+// DB on every row update) rather than adding any new tracking.
+export async function getLastUpdated(): Promise<Date | null> {
+  try {
+    const { data, error } = await supabase
+      .from('shops')
+      .select('updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !data?.updated_at) {
+      return null;
+    }
+
+    return new Date(data.updated_at);
+  } catch (error) {
+    console.error('Error getting last updated date:', error);
+    return null;
+  }
+}
+
 // Function to get all tags across all shops
 export async function getAllTags(): Promise<string[]> {
   try {

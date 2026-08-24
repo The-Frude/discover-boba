@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { getLastUpdated } from '@/utils/data'
 
-export default function Footer() {
+export default async function Footer() {
   const currentYear = new Date().getFullYear()
-  
+  const lastUpdated = await getLastUpdated()
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container-custom py-12">
@@ -102,6 +104,13 @@ export default function Footer() {
               Broadleaf Agency
             </a>{' '}
             in Woodstock, GA.
+            {lastUpdated && (
+              <>
+                {' '}
+                &middot; Data updated{' '}
+                {lastUpdated.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </>
+            )}
           </p>
           <div className="flex space-x-6">
             <Link href="/privacy-policy" className="text-gray-400 hover:text-white text-sm">

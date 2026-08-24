@@ -1,12 +1,22 @@
 import Link from 'next/link'
 import { getCities } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
+import JsonLd from '@/components/JsonLd'
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Discover Boba',
+  url: 'https://www.discoverboba.com',
+  description: 'A directory of boba tea shops across major U.S. cities.',
+}
 
 export default async function Home() {
   const cities = await getCities()
 
   return (
     <main className="min-h-screen">
+      <JsonLd data={organizationJsonLd} />
       {/* Hero Section */}
       <section className="relative h-[42vh] md:h-[70vh] min-h-[300px] md:min-h-[500px] flex items-center justify-center">
         <div className="absolute inset-0 z-0">

@@ -1,0 +1,26 @@
+# Discover Boba
+
+> A directory of boba (bubble tea) shops across major U.S. cities, with shop details, hours, service options, and user reviews to help people find a boba shop near them.
+
+Discover Boba currently covers 800+ boba tea shops across 7 U.S. metro areas: Atlanta, Chicago, Dallas, New York, Philadelphia, Seattle, and Washington D.C. Metro coverage includes nearby suburbs, so some listed shops are in neighboring states (e.g. MD/VA shops under Washington D.C.). Each shop page includes address, hours, service options (delivery/takeout/dine-in), and a description where available. Discover Boba also runs its own on-site review system, separate from any imported third-party ratings.
+
+## City Directories
+
+- [Atlanta](https://www.discoverboba.com/find-boba-shops/atlanta): boba shops in the Atlanta metro area
+- [Chicago](https://www.discoverboba.com/find-boba-shops/chicago): boba shops in the Chicago metro area
+- [Dallas](https://www.discoverboba.com/find-boba-shops/dallas): boba shops in the Dallas–Fort Worth metro area
+- [New York](https://www.discoverboba.com/find-boba-shops/new-york): boba shops in the New York metro area
+- [Philadelphia](https://www.discoverboba.com/find-boba-shops/philadelphia): boba shops in the Philadelphia metro area
+- [Seattle](https://www.discoverboba.com/find-boba-shops/seattle): boba shops in the Seattle metro area
+- [Washington D.C.](https://www.discoverboba.com/find-boba-shops/washington): boba shops in the Washington D.C. metro area, including nearby MD and VA suburbs
+
+## Key Pages
+
+- [Find Shops](https://www.discoverboba.com/find-boba-shops): full list of covered metro areas
+- [FAQ](https://www.discoverboba.com/faq): direct answers to common boba tea and site questions
+- [About Discover Boba](https://www.discoverboba.com/about-us): what the site is and who it's for
+
+## Optional
+
+- [Contact](https://www.discoverboba.com/contact)
+- [Search](https://www.discoverboba.com/search): search shops by name, city, or tag

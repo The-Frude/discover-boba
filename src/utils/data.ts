@@ -297,6 +297,15 @@ export function createSlug(text: string): string {
     .replace(/ +/g, '-');
 }
 
+// getCities() otherwise derives a metro's `state` from whichever shop row
+// happens to load first for that city - fine for single-state metros, but
+// for multi-state metros (Washington spans DC/MD/VA) that makes `state`
+// depend on query row order rather than reliably resolving to the metro's
+// actual primary state/label. Override it for the metros where that matters.
+const CITY_PRIMARY_STATE: Record<string, string> = {
+  Washington: 'D.C.',
+}
+
 // Function to get all cities
 export async function getCities(): Promise<City[]> {
   try {
@@ -345,7 +354,7 @@ export async function getCities(): Promise<City[]> {
       cities.push({
         name: cityName,
         slug: createSlug(cityName),
-        state: data.state,
+        state: CITY_PRIMARY_STATE[cityName] || data.state,
         shopCount: data.count,
         image: imagePath,
       });

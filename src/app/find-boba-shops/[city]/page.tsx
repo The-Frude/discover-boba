@@ -14,6 +14,42 @@ import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import { CITY_INTROS } from './city-intros'
 
+// Hand-written per-city SEO copy - avoids the single shared template
+// (`Best Boba Tea Shops in ${city.name}, ${city.state}`) showing up as
+// identical boilerplate across all 7 pages in view-source. `{count}` in
+// each entry is filled in from the live `city.shopCount` at render time,
+// never hardcoded, so it can't drift as the directory grows.
+const CITY_SEO: Record<string, { title: (count: number) => string; description: (count: number) => string }> = {
+  atlanta: {
+    title: (count) => `${count}+ Boba Tea Shops in Atlanta, GA | Discover Boba`,
+    description: (count) => `Find boba tea shops across Atlanta and nearby Decatur, Duluth, and Alpharetta. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+  chicago: {
+    title: (count) => `${count}+ Boba Tea Shops in Chicago, IL | Discover Boba`,
+    description: (count) => `Explore boba tea shops in Chicago's Chinatown, the Argyle Street corridor, and the suburbs. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+  dallas: {
+    title: (count) => `${count}+ Boba Tea Shops in Dallas, TX | Discover Boba`,
+    description: (count) => `Browse boba tea shops across Dallas and suburbs like Plano, Irving, and Frisco. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+  'new-york': {
+    title: (count) => `${count}+ Boba Tea Shops in New York, NY | Discover Boba`,
+    description: (count) => `Find boba tea shops across all five boroughs, from Flushing to Manhattan's Chinatown. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+  philadelphia: {
+    title: (count) => `${count}+ Boba Tea Shops in Philadelphia, PA | Discover Boba`,
+    description: (count) => `Explore boba tea shops in Philadelphia's Chinatown, University City, and nearby South Jersey. Compare ratings and menus from ${count}+ bubble tea spots.`,
+  },
+  seattle: {
+    title: (count) => `${count}+ Boba Tea Shops in Seattle, WA | Discover Boba`,
+    description: (count) => `Browse boba tea shops from downtown Seattle to Bellevue and the Eastside suburbs. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+  washington: {
+    title: (count) => `${count}+ Boba Tea Shops in Washington, D.C. | Discover Boba`,
+    description: (count) => `Find boba tea shops across D.C., plus nearby Bethesda, Arlington, and Alexandria. Compare ratings, hours, and menus from ${count}+ bubble tea spots.`,
+  },
+}
+
 interface CityPageProps {
   params: {
     city: string
@@ -39,14 +75,27 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
     }
   }
   
+  const seo = CITY_SEO[city.slug]
+  const title = seo
+    ? seo.title(city.shopCount)
+    : `Best Boba Tea Shops in ${city.name}, ${city.state} | Discover Boba`
+  const description = seo
+    ? seo.description(city.shopCount)
+    : `Find the top-rated bubble tea shops in ${city.name}, ${city.state}. Browse reviews, ratings, and details for the best boba experience.`
+
   return {
-    title: `Best Boba Tea Shops in ${city.name}, ${city.state} | Discover Boba`,
-    description: `Find the top-rated bubble tea shops in ${city.name}, ${city.state}. Browse reviews, ratings, and details for the best boba experience.`,
+    title,
+    description,
     keywords: `boba, bubble tea, ${city.name}, ${city.state}, milk tea, tapioca, pearls`,
     alternates: {
       // Always the clean city URL, regardless of ?page/tags/sort/minRating,
       // so paginated/filtered views aren't treated as duplicate pages.
       canonical: `/find-boba-shops/${city.slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      images: city.image ? [city.image] : undefined,
     },
   }
 }

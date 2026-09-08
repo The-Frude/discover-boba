@@ -14,6 +14,13 @@ import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import { CITY_INTROS } from './city-intros'
 
+// Without this, Next.js treats the base (no-query-param) city URL as
+// fully static, generated once at build time - shop ranking (rating,
+// premium status, photo-verification results) can drift afterward with
+// no code change to trigger a rebuild. Revalidating hourly keeps it
+// reasonably fresh on its own, same as sitemap.ts.
+export const revalidate = 3600
+
 // Hand-written per-city SEO copy - avoids the single shared template
 // (`Best Boba Tea Shops in ${city.name}, ${city.state}`) showing up as
 // identical boilerplate across all 7 pages in view-source. `{count}` in

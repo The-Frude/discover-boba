@@ -24,7 +24,7 @@ function getMainCity(cityName: string, address: string): { name: string; path: s
   let mainCityPath = cityName.toLowerCase();
 
   if (cityName === "Washington" || address.includes("Washington DC")) {
-    return { name: "Washington", path: "washingtondc" };
+    return { name: "Washington", path: "washington" };
   }
 
   const nyBoroughs = ['Queens', 'Brooklyn', 'Bronx', 'Manhattan', 'Staten Island'];
@@ -64,10 +64,10 @@ function getMainCity(cityName: string, address: string): { name: string; path: s
     { suburb: 'Kirkland', mainCity: 'Seattle', path: 'seattle' },
     { suburb: 'Renton', mainCity: 'Seattle', path: 'seattle' },
 
-    { suburb: 'Arlington VA', mainCity: 'Washington', path: 'washingtondc' },
-    { suburb: 'Alexandria', mainCity: 'Washington', path: 'washingtondc' },
-    { suburb: 'Bethesda', mainCity: 'Washington', path: 'washingtondc' },
-    { suburb: 'Silver Spring', mainCity: 'Washington', path: 'washingtondc' },
+    { suburb: 'Arlington VA', mainCity: 'Washington', path: 'washington' },
+    { suburb: 'Alexandria', mainCity: 'Washington', path: 'washington' },
+    { suburb: 'Bethesda', mainCity: 'Washington', path: 'washington' },
+    { suburb: 'Silver Spring', mainCity: 'Washington', path: 'washington' },
   ];
 
   const exactMatch = citySuburbMap.find(item =>

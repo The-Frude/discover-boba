@@ -28,6 +28,7 @@ export interface Shop {
   description_enriched?: string;
   meta_title?: string;
   meta_description?: string;
+  has_working_photo?: boolean;
   about?: string;
   reservation_links?: string;
   booking_appointment_link?: string;
@@ -411,12 +412,34 @@ export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promi
       console.error(`Error getting shops for ${cityName}:`, error);
       return [];
     }
-    
-    return data || [];
+
+    // Group listings so the best-presented shops show first: a real
+    // Google description plus a working photo, then just a working
+    // photo, then everything else. Array.sort is stable, so within each
+    // premium/tier bucket the existing rating/name/reviews order (already
+    // applied by the query above) is left exactly as-is.
+    const shops = [...(data || [])];
+    shops.sort((a, b) => {
+      const premiumDiff = (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0);
+      if (premiumDiff !== 0) return premiumDiff;
+      return getDisplayTierPriority(a) - getDisplayTierPriority(b);
+    });
+
+    return shops;
   } catch (error) {
     console.error(`Error getting shops for ${cityName}:`, error);
     return [];
   }
+}
+
+// Display-order priority for city listings: 0 = real description + working
+// photo, 1 = working photo only, 2 = no working photo.
+function getDisplayTierPriority(shop: Shop): number {
+  const hasRealDescription = Boolean(shop.description && shop.description.trim());
+  const hasWorkingPhoto = shop.has_working_photo === true;
+  if (hasRealDescription && hasWorkingPhoto) return 0;
+  if (hasWorkingPhoto) return 1;
+  return 2;
 }
 
 // Function to get a shop by slug

@@ -2,7 +2,6 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getShopBySlug, getAllTags, formatWorkingHours, getShopDescription, parseOpeningHoursSpec } from '@/utils/data'
-import MapView from '@/components/MapView'
 import OptimizedImage from '@/components/OptimizedImage'
 import ReviewsSection from '@/components/ReviewsSection'
 import JsonLd from '@/components/JsonLd'
@@ -565,17 +564,6 @@ export default async function ShopPage({ params }: ShopPageProps) {
                   </ul>
                 </div>
               </div>
-            </div>
-            
-            {/* Map */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Location</h2>
-              <MapView
-                address={shop.formatted_address}
-                name={shop.name}
-                latitude={shop.latitude}
-                longitude={shop.longitude}
-              />
             </div>
             
             {/* Reviews Section */}

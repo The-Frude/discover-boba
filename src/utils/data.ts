@@ -25,6 +25,9 @@ export interface Shop {
   slug: string;
   email?: string;
   description?: string;
+  description_enriched?: string;
+  meta_title?: string;
+  meta_description?: string;
   about?: string;
   reservation_links?: string;
   booking_appointment_link?: string;
@@ -181,10 +184,14 @@ export function generateShopBlurb(shop: Shop): string {
   return `${opener}, ${clauses.join(', and ')}.`
 }
 
-// Returns the real Google-sourced description when present, otherwise a
-// generated fallback blurb - so every shop page has at least one sentence
-// of descriptive text instead of just structured facts.
+// Prefers the human-reviewed enriched description, then the real
+// Google-sourced description, then a generated fallback blurb - so every
+// shop page has at least one sentence of descriptive text instead of just
+// structured facts.
 export function getShopDescription(shop: Shop): string {
+  if (shop.description_enriched && shop.description_enriched.trim()) {
+    return shop.description_enriched.trim()
+  }
   if (shop.description && shop.description.trim()) {
     return shop.description.trim()
   }

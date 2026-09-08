@@ -109,9 +109,18 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
     }
   }
   
+  // Prefer the per-shop authored meta title/description when present,
+  // falling back to the generic template for shops not yet processed.
+  const title = shop.meta_title && shop.meta_title.trim()
+    ? shop.meta_title.trim()
+    : `${shop.name} - Boba Tea Shop in ${shop.city}, ${shop.state} | Discover Boba`
+  const description = shop.meta_description && shop.meta_description.trim()
+    ? shop.meta_description.trim()
+    : `Visit ${shop.name} in ${shop.city}, ${shop.state}. Check out their menu, hours, and reviews for the perfect bubble tea experience.`
+
   return {
-    title: `${shop.name} - Boba Tea Shop in ${shop.city}, ${shop.state} | Discover Boba`,
-    description: `Visit ${shop.name} in ${shop.city}, ${shop.state}. Check out their menu, hours, and reviews for the perfect bubble tea experience.`,
+    title,
+    description,
     keywords: `boba, bubble tea, ${shop.name}, ${shop.city}, ${shop.state}, ${shop.tags.join(', ')}`,
     alternates: {
       canonical: `/boba-shop/${shop.slug}`,

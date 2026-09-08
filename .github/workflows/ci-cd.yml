@@ -40,19 +40,9 @@ jobs:
         RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
 
-  deploy:
-    needs: test-and-build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v20
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod'
+  # Deployment is handled by Vercel's own GitHub integration (triggers on
+  # every push to main automatically). There used to be a second explicit
+  # `vercel --prod` deploy job here too - two independent deployments of
+  # the same commit racing to alias production was a real source of
+  # transient post-deploy inconsistency. This job is CI validation only
+  # (lint + build) and intentionally does not deploy.

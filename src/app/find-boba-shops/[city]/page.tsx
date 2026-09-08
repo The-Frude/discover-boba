@@ -14,12 +14,18 @@ import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import { CITY_INTROS } from './city-intros'
 
-// Without this, Next.js treats the base (no-query-param) city URL as
-// fully static, generated once at build time - shop ranking (rating,
-// premium status, photo-verification results) can drift afterward with
-// no code change to trigger a rebuild. Revalidating hourly keeps it
-// reasonably fresh on its own, same as sitemap.ts.
-export const revalidate = 3600
+// NOTE: this page reads `searchParams` (for page/tags/sort/minRating),
+// which is a Next.js "Dynamic API" - it forces the whole route to render
+// fresh on every request, for every URL including the plain no-query-param
+// one, regardless of `generateStaticParams` above. Confirmed via
+// .next/prerender-manifest.json, which has no entry at all for this route
+// (contrast with sitemap.ts, which genuinely gets `initialRevalidateSeconds`
+// there). A `revalidate` export here is silently ignored by Next.js - there
+// is no static/ISR cache for it to apply to, so don't add one back as a fix
+// for perceived staleness; it won't do anything. If this page ever stops
+// reading searchParams and needs real caching again, that's when a
+// revalidate export (or on-demand revalidatePath after data changes) would
+// actually take effect.
 
 // Hand-written per-city SEO copy - avoids the single shared template
 // (`Best Boba Tea Shops in ${city.name}, ${city.state}`) showing up as

@@ -2,7 +2,6 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getShopsByCity, getCities, GENERIC_TAGS } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
 import FilterSidebar from '@/components/FilterSidebar'
@@ -12,6 +11,7 @@ import SortDropdown from '@/components/SortDropdown'
 import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
+import Breadcrumbs from '@/components/Breadcrumbs'
 import { CITY_INTROS } from './city-intros'
 
 // NOTE: this page reads `searchParams` (for page/tags/sort/minRating),
@@ -200,23 +200,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
       {/* Breadcrumbs */}
       <div className="container-custom pt-6">
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-3">
-            <li className="inline-flex items-center">
-              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-                Home
-              </Link>
-            </li>
-            <li aria-current="page">
-              <div className="flex items-center">
-                <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
-                </svg>
-                <span className="text-gray-500 dark:text-gray-400 ml-1 md:ml-2">{city.name}</span>
-              </div>
-            </li>
-          </ol>
-        </nav>
+        <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: city.name }]} />
       </div>
 
       {/* Hero Section */}

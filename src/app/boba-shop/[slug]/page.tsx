@@ -1,10 +1,10 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getShopBySlug, getAllTags, formatWorkingHours, getShopDescription, parseOpeningHoursSpec } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
 import ReviewsSection from '@/components/ReviewsSection'
 import JsonLd from '@/components/JsonLd'
+import Breadcrumbs from '@/components/Breadcrumbs'
 
 const SITE_URL = 'https://www.discoverboba.com'
 
@@ -242,35 +242,15 @@ export default async function ShopPage({ params }: ShopPageProps) {
       <div className="container-custom">
         {/* Breadcrumbs */}
         <div className="mb-6">
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="inline-flex items-center space-x-1 md:space-x-3">
-              <li className="inline-flex items-center">
-                <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <div className="flex items-center">
-                  <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
-                  </svg>
-                  <Link href={`/find-boba-shops/${breadcrumbCityPath}`} className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 ml-1 md:ml-2">
-                    {breadcrumbCityName}
-                  </Link>
-                </div>
-              </li>
-              <li aria-current="page">
-                <div className="flex items-center">
-                  <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
-                  </svg>
-                  <span className="text-gray-500 dark:text-gray-400 ml-1 md:ml-2">{shop.name}</span>
-                </div>
-              </li>
-            </ol>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { name: 'Home', href: '/' },
+              { name: breadcrumbCityName, href: `/find-boba-shops/${breadcrumbCityPath}` },
+              { name: shop.name },
+            ]}
+          />
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">

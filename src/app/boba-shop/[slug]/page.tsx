@@ -8,6 +8,18 @@ import JsonLd from '@/components/JsonLd'
 
 const SITE_URL = 'https://www.discoverboba.com'
 
+// generateStaticParams() returns [] (no shop is pre-built), so without this
+// each shop page gets cached indefinitely per-URL after its first visit -
+// confirmed via .next/prerender-manifest.json and by X-Vercel-Cache: HIT
+// with a climbing Age header in production - with nothing anywhere ever
+// calling revalidatePath to bust it. Data here (rating, description, hours,
+// website/phone) is refreshed by scripts outside of a deploy, so a cached
+// page can silently go stale until the next redeploy. Forcing dynamic
+// rendering matches how /find-boba-shops/[city] already behaves (always
+// live, no caching) rather than leaving this route's staleness posture to
+// accident. See docs/AUDIT.md §D for the full investigation.
+export const dynamic = 'force-dynamic'
+
 interface ShopPageProps {
   params: {
     slug: string

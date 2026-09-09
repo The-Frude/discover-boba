@@ -2,17 +2,24 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
-import { getShopsByCity, getCities, GENERIC_TAGS } from '@/utils/data'
+import { getShopsByCity, getCities, getOpenStatus, Shop } from '@/utils/data'
 import ShopCard from '@/components/ShopCard'
-import FilterSidebar from '@/components/FilterSidebar'
+import CityFilterBar, { ActiveFilterChip } from '@/components/CityFilterBar'
 import CityMapView from '@/components/CityMapView'
 import Pagination from '@/components/Pagination'
-import SortDropdown from '@/components/SortDropdown'
 import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { CITY_INTROS } from './city-intros'
+
+// docs/UI-OVERHAUL-PLAN-09sep2026.md §Phase 5: filters are curated per
+// dimension, not "every tag that isn't universal" - Rating, review count,
+// Open now, Delivery, and Wheelchair accessible clear the 60%-populated
+// bar in all 7 cities. Social media presence clears it everywhere except
+// Washington (54%, recomputed in docs/AUDIT.md), so it's the one filter
+// gated per city.
+const SOCIAL_FILTER_EXCLUDED_CITIES = new Set(['washington'])
 
 // NOTE: this page reads `searchParams` (for page/tags/sort/minRating),
 // which is a Next.js "Dynamic API" - it forces the whole route to render
@@ -69,9 +76,13 @@ interface CityPageProps {
   }
   searchParams: {
     page?: string
-    tags?: string
     sort?: string
     minRating?: string
+    delivery?: string
+    wheelchair?: string
+    social?: string
+    open?: string
+    q?: string
   }
 }
 
@@ -101,8 +112,8 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
     description,
     keywords: `boba, bubble tea, ${city.name}, ${city.state}, milk tea, tapioca, pearls`,
     alternates: {
-      // Always the clean city URL, regardless of ?page/tags/sort/minRating,
-      // so paginated/filtered views aren't treated as duplicate pages.
+      // Always the clean city URL, regardless of any filter/sort/search
+      // query params, so filtered views aren't treated as duplicate pages.
       canonical: `/find-boba-shops/${city.slug}`,
     },
     openGraph: {
@@ -132,35 +143,69 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
     notFound()
   }
   
-  // Handle tag filtering - ensure searchParams is properly awaited
+  // Handle filtering - ensure searchParams is properly awaited
   const searchParamsData = await Promise.resolve(searchParams)
-  
+
   // Get all shops for this city with optional sorting
   const allShops = await getShopsByCity(city.name, searchParamsData?.sort || 'rating')
-  
-  // Count how many shops carry each tag, then drop tags every shop has
-  // (e.g. "Bubble Tea", "Takeout") - they can never narrow the results,
-  // so offering them as filters is just clutter.
-  const tagCounts = new Map<string, number>()
-  allShops.forEach(shop => {
-    shop.tags.forEach(tag => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1))
-  })
-  const filterableTags = Array.from(tagCounts.entries())
-    .filter(([tag, count]) => count < allShops.length && !GENERIC_TAGS.includes(tag))
-    .sort((a, b) => b[1] - a[1])
-    .map(([tag, count]) => ({ tag, count }))
 
-  const selectedTagsParam = searchParamsData?.tags || ''
-  const selectedTags = selectedTagsParam ? selectedTagsParam.split(',') : []
-  const minRating = searchParamsData?.minRating ? parseFloat(searchParamsData.minRating) : 0
+  const showSocialFilter = !SOCIAL_FILTER_EXCLUDED_CITIES.has(city.slug)
 
-  // A shop must match every selected filter (AND), not just one of them.
-  const filteredShops = allShops.filter(shop => {
-    const matchesTags = selectedTags.every(tag => shop.tags.includes(tag))
-    const matchesRating = shop.rating >= minRating
-    return matchesTags && matchesRating
+  const q = (searchParamsData?.q || '').trim()
+  const sort = searchParamsData?.sort || 'rating'
+  const minRatingParam = searchParamsData?.minRating || ''
+  const minRating = minRatingParam ? parseFloat(minRatingParam) : 0
+  const wantsDelivery = searchParamsData?.delivery === '1'
+  const wantsWheelchair = searchParamsData?.wheelchair === '1'
+  const wantsSocial = showSocialFilter && searchParamsData?.social === '1'
+  const wantsOpenNow = searchParamsData?.open === 'now'
+
+  const hasSocialPresence = (shop: Shop) =>
+    Boolean(shop.facebook || shop.instagram || shop.twitter || shop.tiktok)
+
+  // A shop must match every active filter (AND), not just one of them.
+  const filteredShops = allShops.filter((shop) => {
+    if (minRating > 0 && shop.rating < minRating) return false
+    if (wantsDelivery && !shop.tags.includes('Delivery')) return false
+    if (wantsWheelchair && !shop.tags.includes('Wheelchair accessible')) return false
+    if (wantsSocial && !hasSocialPresence(shop)) return false
+    if (wantsOpenNow && getOpenStatus(shop)?.isOpen !== true) return false
+    if (q && !shop.name.toLowerCase().includes(q.toLowerCase())) return false
+    return true
   })
-  
+
+  // Chips reflect only filters actually driving the current result set -
+  // each removeHref drops just that one param so the chip is a real,
+  // working link with no client JS required.
+  const buildCityHref = (overrides: Record<string, string | undefined>) => {
+    const params = new URLSearchParams()
+    const next: Record<string, string | undefined> = {
+      sort: sort !== 'rating' ? sort : undefined,
+      minRating: minRatingParam || undefined,
+      delivery: wantsDelivery ? '1' : undefined,
+      wheelchair: wantsWheelchair ? '1' : undefined,
+      social: wantsSocial ? '1' : undefined,
+      open: wantsOpenNow ? 'now' : undefined,
+      q: q || undefined,
+      ...overrides,
+    }
+    Object.entries(next).forEach(([key, value]) => {
+      if (value) params.set(key, value)
+    })
+    const qs = params.toString()
+    return `/find-boba-shops/${city.slug}${qs ? `?${qs}` : ''}`
+  }
+
+  const activeChips: ActiveFilterChip[] = []
+  if (minRatingParam) activeChips.push({ label: `${minRatingParam}+ stars`, removeHref: buildCityHref({ minRating: undefined }) })
+  if (wantsOpenNow) activeChips.push({ label: 'Open now', removeHref: buildCityHref({ open: undefined }) })
+  if (wantsDelivery) activeChips.push({ label: 'Delivery', removeHref: buildCityHref({ delivery: undefined }) })
+  if (wantsWheelchair) activeChips.push({ label: 'Wheelchair accessible', removeHref: buildCityHref({ wheelchair: undefined }) })
+  if (wantsSocial) activeChips.push({ label: 'Has social media', removeHref: buildCityHref({ social: undefined }) })
+  if (q) activeChips.push({ label: `"${q}"`, removeHref: buildCityHref({ q: undefined }) })
+
+  const clearAllHref = `/find-boba-shops/${city.slug}`
+
   // Pagination
   const itemsPerPage = 10 // Number of shops per page
   const currentPage = searchParamsData?.page ? parseInt(searchParamsData.page) : 1
@@ -235,63 +280,70 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
             </p>
           )}
 
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Filter Sidebar */}
-            <div className="lg:w-1/4">
-              <Suspense fallback={<div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">Loading filters...</div>}>
-                <FilterSidebar
-                  tags={filterableTags}
-                  citySlug={city.slug}
-                />
-              </Suspense>
-            </div>
+          <CityFilterBar
+            citySlug={city.slug}
+            cityName={city.name}
+            q={q}
+            sort={sort}
+            minRating={minRatingParam}
+            delivery={wantsDelivery}
+            wheelchair={wantsWheelchair}
+            social={wantsSocial}
+            open={wantsOpenNow}
+            showSocialFilter={showSocialFilter}
+            resultCount={filteredShops.length}
+            totalCount={allShops.length}
+            activeChips={activeChips}
+            clearAllHref={clearAllHref}
+          />
 
-            {/* Shop Listings */}
-            <div className="lg:w-3/4">
-              <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-                <h2 className="text-2xl font-bold">
-                  {filteredShops.length} Shops Found
-                </h2>
-                <div className="flex items-center gap-4">
-                  <Suspense fallback={null}>
-                    <SortDropdown totalItems={filteredShops.length} />
-                  </Suspense>
-                  <JumpToMapButton />
-                </div>
-              </div>
-              
-              {/* docs/UI-OVERHAUL-PLAN-09sep2026.md §4: auto-fill so the
-                  column count responds to space rather than a fixed
-                  breakpoint count. */}
-              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-                {paginatedShops.map((shop) => (
-                  <ShopCard key={shop.id} shop={shop} />
-                ))}
-              </div>
-              
-              {/* Pagination */}
-              <Suspense fallback={<div className="flex justify-center mt-8">Loading pagination...</div>}>
-                <Pagination
-                  totalItems={filteredShops.length}
-                  itemsPerPage={itemsPerPage}
-                  currentPage={currentPage}
-                  citySlug={city.slug}
-                  selectedTags={selectedTags}
-                  sort={searchParamsData?.sort}
-                  minRating={searchParamsData?.minRating}
-                />
-              </Suspense>
-              
-              {filteredShops.length === 0 && (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No shops found</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Try adjusting your filters or check back later.
-                  </p>
-                </div>
-              )}
-            </div>
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <h2 className="text-2xl font-bold">
+              {filteredShops.length} Shops Found
+            </h2>
+            <JumpToMapButton />
           </div>
+
+          {/* docs/UI-OVERHAUL-PLAN-09sep2026.md §4: auto-fill so the
+              column count responds to space rather than a fixed
+              breakpoint count. */}
+          <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {paginatedShops.map((shop) => (
+              <ShopCard key={shop.id} shop={shop} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <Suspense fallback={<div className="flex justify-center mt-8">Loading pagination...</div>}>
+            <Pagination
+              totalItems={filteredShops.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              citySlug={city.slug}
+              sort={sort !== 'rating' ? sort : undefined}
+              minRating={minRatingParam || undefined}
+              delivery={wantsDelivery}
+              wheelchair={wantsWheelchair}
+              social={wantsSocial}
+              open={wantsOpenNow}
+              q={q || undefined}
+            />
+          </Suspense>
+
+          {filteredShops.length === 0 && (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-medium mb-2">No shops match your filters</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {q
+                  ? `No shops match "${q}"${activeChips.length > 1 ? ' with your selected filters' : ''} in ${city.name}.`
+                  : `No shops match these filters in ${city.name}.`}{' '}
+                Clear filters to see all {allShops.length} shops.
+              </p>
+              <a href={clearAllHref} className="btn-primary">
+                Clear filters
+              </a>
+            </div>
+          )}
         </div>
       </section>
       

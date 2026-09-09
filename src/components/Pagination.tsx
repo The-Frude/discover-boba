@@ -9,9 +9,13 @@ interface PaginationProps {
   itemsPerPage: number
   currentPage: number
   citySlug: string
-  selectedTags?: string[]
   sort?: string
   minRating?: string
+  delivery?: boolean
+  wheelchair?: boolean
+  social?: boolean
+  open?: boolean
+  q?: string
 }
 
 function PaginationContent({
@@ -19,9 +23,13 @@ function PaginationContent({
   itemsPerPage,
   currentPage,
   citySlug,
-  selectedTags = [],
   sort,
-  minRating
+  minRating,
+  delivery,
+  wheelchair,
+  social,
+  open,
+  q,
 }: PaginationProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   
@@ -68,15 +76,13 @@ function PaginationContent({
   const getPageUrl = (page: number) => {
     const params = new URLSearchParams()
     params.set('page', String(page))
-    if (selectedTags.length > 0) {
-      params.set('tags', selectedTags.join(','))
-    }
-    if (sort) {
-      params.set('sort', sort)
-    }
-    if (minRating) {
-      params.set('minRating', minRating)
-    }
+    if (sort) params.set('sort', sort)
+    if (minRating) params.set('minRating', minRating)
+    if (delivery) params.set('delivery', '1')
+    if (wheelchair) params.set('wheelchair', '1')
+    if (social) params.set('social', '1')
+    if (open) params.set('open', 'now')
+    if (q) params.set('q', q)
     return `/find-boba-shops/${citySlug}?${params.toString()}`
   }
   

@@ -11,8 +11,7 @@ interface PaginationProps {
   citySlug: string
   sort?: string
   minRating?: string
-  delivery?: boolean
-  wheelchair?: boolean
+  tags?: string[]
   social?: boolean
   open?: boolean
   q?: string
@@ -25,8 +24,7 @@ function PaginationContent({
   citySlug,
   sort,
   minRating,
-  delivery,
-  wheelchair,
+  tags = [],
   social,
   open,
   q,
@@ -78,8 +76,7 @@ function PaginationContent({
     params.set('page', String(page))
     if (sort) params.set('sort', sort)
     if (minRating) params.set('minRating', minRating)
-    if (delivery) params.set('delivery', '1')
-    if (wheelchair) params.set('wheelchair', '1')
+    tags.forEach((key) => params.append('tags', key))
     if (social) params.set('social', '1')
     if (open) params.set('open', 'now')
     if (q) params.set('q', q)

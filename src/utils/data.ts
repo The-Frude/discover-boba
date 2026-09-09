@@ -66,6 +66,138 @@ export interface City {
   image?: string;
 }
 
+// `about` is not free text - it's a structured JSON blob straight from the
+// original Google Places scrape, shaped like:
+//   {"Service options": {"Delivery": true, "Takeout": true}, "Crowd":
+//    {"LGBTQ+ friendly": true}, "Other": {"LGBTQ+ friendly": true}, ...}
+// The same real-world attribute sometimes appears filed under two
+// different category names (e.g. "LGBTQ+ friendly" under both "Crowd"
+// and "Other" for the same shop), so this flattens every category and
+// returns the set of true-valued leaf attribute names, category-agnostic.
+// 810 of 813 shops parse successfully; the rest have an empty/missing
+// `about` and just get an empty set.
+export function parseAboutAttributes(about?: string | null): Set<string> {
+  const attributes = new Set<string>();
+  if (!about || about === '{}') return attributes;
+  let parsed: Record<string, Record<string, boolean>>;
+  try {
+    parsed = JSON.parse(about);
+  } catch {
+    return attributes;
+  }
+  Object.values(parsed).forEach((items) => {
+    if (!items || typeof items !== 'object') return;
+    Object.entries(items).forEach(([name, value]) => {
+      if (value === true) attributes.add(name);
+    });
+  });
+  return attributes;
+}
+
+export interface FilterAttribute {
+  key: string;
+  label: string;
+  group: string;
+  /** Any one of these raw `about` item names counts as a match (OR). */
+  aboutItems: string[];
+}
+
+// The full candidate list - not every one of these will actually appear
+// as a filter in every city (or any city). Population is checked live,
+// per city, against MIN_ATTRIBUTE_COUNT/MIN_ATTRIBUTE_PERCENT below, so a
+// dimension that's real but too rare everywhere (e.g. "Live music", 5
+// shops sitewide) simply never renders rather than needing to be manually
+// excluded here. See docs/AUDIT.md for the full per-city population table
+// this was calibrated against.
+export const FILTER_ATTRIBUTES: FilterAttribute[] = [
+  // Access & service
+  { key: 'delivery', label: 'Delivery', group: 'Access & service', aboutItems: ['Delivery'] },
+  {
+    key: 'wheelchairAccessible',
+    label: 'Wheelchair accessible',
+    group: 'Access & service',
+    aboutItems: [
+      'Wheelchair accessible entrance',
+      'Wheelchair accessible restroom',
+      'Wheelchair accessible seating',
+      'Wheelchair accessible parking lot',
+    ],
+  },
+  { key: 'outdoorSeating', label: 'Outdoor seating', group: 'Access & service', aboutItems: ['Outdoor seating'] },
+  { key: 'reservations', label: 'Accepts reservations', group: 'Access & service', aboutItems: ['Accepts reservations'] },
+  { key: 'wifi', label: 'Wi-Fi', group: 'Access & service', aboutItems: ['Wi-Fi'] },
+
+  // Dietary
+  { key: 'vegetarian', label: 'Vegetarian options', group: 'Dietary', aboutItems: ['Vegetarian options'] },
+  { key: 'vegan', label: 'Vegan options', group: 'Dietary', aboutItems: ['Vegan options'] },
+  { key: 'alcohol', label: 'Serves alcohol', group: 'Dietary', aboutItems: ['Alcohol', 'Beer', 'Wine', 'Cocktails', 'Hard liquor'] },
+
+  // Good for
+  { key: 'goodForKids', label: 'Good for kids', group: 'Good for', aboutItems: ['Good for kids'] },
+  { key: 'familyFriendly', label: 'Family-friendly', group: 'Good for', aboutItems: ['Family-friendly'] },
+  { key: 'groups', label: 'Good for groups', group: 'Good for', aboutItems: ['Groups'] },
+  { key: 'soloDining', label: 'Good for solo dining', group: 'Good for', aboutItems: ['Solo dining'] },
+  { key: 'laptop', label: 'Good for working on a laptop', group: 'Good for', aboutItems: ['Good for working on laptop'] },
+  { key: 'collegeStudents', label: 'Popular with college students', group: 'Good for', aboutItems: ['College students'] },
+  { key: 'dogsFriendly', label: 'Dog friendly', group: 'Good for', aboutItems: ['Dogs allowed', 'Dogs allowed outside', 'Dogs allowed inside'] },
+
+  // Inclusive & ownership
+  { key: 'lgbtqFriendly', label: 'LGBTQ+ friendly', group: 'Inclusive & ownership', aboutItems: ['LGBTQ+ friendly'] },
+  { key: 'transSafespace', label: 'Transgender safespace', group: 'Inclusive & ownership', aboutItems: ['Transgender safespace'] },
+  { key: 'womenOwned', label: 'Women-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as women-owned'] },
+  { key: 'asianOwned', label: 'Asian-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as Asian-owned'] },
+  { key: 'blackOwned', label: 'Black-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as Black-owned'] },
+  { key: 'latinoOwned', label: 'Latino-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as Latino-owned'] },
+  { key: 'veteranOwned', label: 'Veteran-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as veteran-owned'] },
+  { key: 'lgbtqOwned', label: 'LGBTQ+-owned', group: 'Inclusive & ownership', aboutItems: ['Identifies as LGBTQ+ owned'] },
+  { key: 'smallBusiness', label: 'Small business', group: 'Inclusive & ownership', aboutItems: ['Small business'] },
+]
+
+// A filter that returns almost nothing is worse than no filter at all -
+// this is the floor a FILTER_ATTRIBUTES entry must clear, per city, to
+// actually render there. Deliberately looser than the site-wide-uniform
+// dimensions (rating/hours/delivery, which clear 60%+ everywhere): those
+// go through the same check but pass easily, while a genuinely niche-but-
+// real attribute like "Vegan options" only shows up in the cities where
+// it means something.
+export const MIN_ATTRIBUTE_COUNT = 5
+export const MIN_ATTRIBUTE_PERCENT = 3
+
+export interface AvailableAttribute extends FilterAttribute {
+  count: number
+}
+
+export interface AttributeGroup {
+  group: string
+  items: AvailableAttribute[]
+}
+
+// Given a city's full shop list, returns only the FILTER_ATTRIBUTES that
+// clear the floor for THIS city, grouped for display, in FILTER_ATTRIBUTES
+// order. A shop's attribute set is parsed once and reused across every
+// candidate check, not re-parsed per attribute.
+export function getAvailableAttributeGroups(shops: Shop[]): AttributeGroup[] {
+  const attributeSets = shops.map((shop) => parseAboutAttributes(shop.about))
+  const totalShops = shops.length
+  const groups = new Map<string, AvailableAttribute[]>()
+
+  FILTER_ATTRIBUTES.forEach((attr) => {
+    const count = attributeSets.filter((set) => attr.aboutItems.some((item) => set.has(item))).length
+    const percent = totalShops > 0 ? (count / totalShops) * 100 : 0
+    if (count < MIN_ATTRIBUTE_COUNT || percent < MIN_ATTRIBUTE_PERCENT) return
+    const list = groups.get(attr.group) || []
+    list.push({ ...attr, count })
+    groups.set(attr.group, list)
+  })
+
+  return Array.from(groups.entries()).map(([group, items]) => ({ group, items }))
+}
+
+export function shopHasAttribute(shop: Shop, attr: FilterAttribute): boolean {
+  const set = parseAboutAttributes(shop.about)
+  return attr.aboutItems.some((item) => set.has(item))
+}
+
 // Function to extract tags from the about field
 export function extractTags(aboutField: string): string[] {
   try {

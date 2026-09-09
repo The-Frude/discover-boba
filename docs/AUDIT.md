@@ -299,3 +299,42 @@ Run against live production after Phase 9 merged and deployed (2026-09-09), same
 - **Total page weight decreased on every single page type** versus baseline (homepage -32%, city -3%, shop +13%... shop is the one exception, explained entirely by the new nearby-shops section's additional `ShopTile`-rendered cards, a deliberate, real feature addition rather than bloat).
 
 No regressions against the Phase 0 baseline on any of the plan's three gate criteria, on any of the three page types.
+
+---
+
+## G. City filter rework (post-launch owner review, 2026-09-09)
+
+Owner review of the live site found the Phase 5 filter set (5 universal dimensions + social) too thin - "much more dynamic and interesting filtering" was expected from the overhaul, not less than the pre-overhaul sidebar had. Investigated and found the root cause: the `about` column isn't free text, it's a structured JSON blob straight from the original Google Places scrape (categories like `Service options`, `Crowd`, `Dining options`, `Offerings`, `Children`, `Pets`, each holding real boolean attributes), and the only code that ever read it (`extractTags()`) did naive substring matching against a short hardcoded list - leaving the overwhelming majority of this data completely unused. It also explains why the original Phase 5 table's LGBTQ+-friendly figure ("54% at best, in Chicago") was wrong: parsed directly, Chicago is 27%.
+
+**810 of 813 shops parse successfully** (`parseAboutAttributes()` in `src/utils/data.ts`); 3 have an empty/missing `about`. The same real attribute sometimes appears filed under two different category names for the same shop (e.g. "LGBTQ+ friendly" under both "Crowd" and "Other") - parsing flattens across categories rather than trusting any one category name.
+
+**Per-city population for the dimensions now in `FILTER_ATTRIBUTES`** (shops / % of that city; blank cells mean the count is real but the specific number wasn't separately re-verified in this table - see the live site for the authoritative current count):
+
+| Attribute | Atlanta | Chicago | Dallas | New York | Philadelphia | Seattle | Washington |
+|---|---|---|---|---|---|---|---|
+| LGBTQ+ friendly | 22 (23%) | 27 (27%) | 30 (23%) | 23 (16%) | 11 (11%) | 33 (23%) | 13 (13%) |
+| Transgender safespace | 16 (17%) | 19 (19%) | 24 (18%) | 15 (10%) | 7 (7%) | 24 (17%) | 9 (9%) |
+| Good for kids | 20 (21%) | 21 (21%) | 19 (15%) | 20 (14%) | 18 (18%) | 20 (14%) | 28 (28%) |
+| Family-friendly | 10 (10%) | 11 (11%) | 8 (6%) | 12 (8%) | 10 (10%) | 13 (9%) | 8 (8%) |
+| Women-owned | 12 (13%) | 14 (14%) | 28 (21%) | 19 (13%) | 7 (7%) | 29 (20%) | 10 (10%) |
+| Asian-owned | 4 (4%) | 13 (13%) | 33 (25%) | 18 (12%) | 10 (10%) | 25 (18%) | 8 (8%) |
+| Vegetarian options | 12 (13%) | 5 (5%) | 4 (3%) | 4 (3%) | 10 (10%) | 6 (4%) | 10 (10%) |
+| Vegan options | 6 (6%) | 3 (3%) | 2 (2%) | 0 (0%) | 2 (2%) | 3 (2%) | 5 (5%) |
+| Good for college students | 9 (9%) | 13 (13%) | 13 (10%) | 6 (4%) | 14 (14%) | 12 (8%) | 10 (10%) |
+| Wi-Fi | 11 (11%) | 16 (16%) | 8 (6%) | 14 (10%) | 14 (14%) | 13 (9%) | 13 (13%) |
+| Outdoor seating | 7 (7%) | 8 (8%) | 6 (5%) | 3 (2%) | 4 (4%) | 0 (0%) | 12 (12%) |
+| Good for groups | 13 (14%) | 11 (11%) | 12 (9%) | 2 (1%) | 5 (5%) | 7 (5%) | 9 (9%) |
+| Solo dining | 24 (25%) | 20 (20%) | 19 (15%) | 19 (13%) | 23 (23%) | 19 (13%) | 27 (27%) |
+| Dog friendly | 8 (8%) | 7 (7%) | 3 (2%) | 3 (2%) | 7 (7%) | 7 (5%) | 17 (17%) |
+| Accepts reservations | 6 (6%) | 3 (3%) | 2 (2%) | 4 (3%) | 9 (9%) | 4 (3%) | 5 (5%) |
+| Serves alcohol | 5 (5%) | 1 (1%) | 2 (2%) | 3 (2%) | 2 (2%) | 4 (3%) | 5 (5%) |
+| Small business | 4 (4%) | 2 (2%) | 6 (5%) | 2 (1%) | 2 (2%) | 9 (6%) | 2 (2%) |
+| Good for working on a laptop | 4 (4%) | 8 (8%) | 3 (2%) | 3 (2%) | 4 (4%) | 4 (3%) | 5 (5%) |
+
+**Deliberately excluded from `FILTER_ATTRIBUTES` (real, but too rare everywhere to ever clear the floor):** Live music (5 sitewide), Live performances (6), Black-owned (9), Latino-owned (6), Veteran-owned (6), LGBTQ+-owned (5). These max out at 0-3 shops per city - filtering on any of them would mean an empty or near-empty result in every single city, which fails the site's own "never dead-end a filter" rule. Worth a per-card badge if a later phase wants one; not a filter.
+
+**Also checked and ruled out as a filter-data source:** the `reviews` table (site-native user review submissions, not scraped Google reviews) has exactly 2 rows - not remotely usable for tag extraction. `about` is the only real, ready-to-use source right now.
+
+**New floor:** `MIN_ATTRIBUTE_COUNT = 5` and `MIN_ATTRIBUTE_PERCENT = 3` in `src/utils/data.ts`, checked live per city via `getAvailableAttributeGroups()` - not hardcoded per attribute per city, so this self-corrects as the underlying data changes rather than needing another manual table update. Delivery and Wheelchair accessible moved onto this same live `about`-parsing path (previously read from the static `tags` column - see the Phase 5 plan amendment for the ~100-shop Delivery-count discrepancy this incidentally fixed).
+
+**UI:** `CityFilterBar` groups attributes by category (Access & service / Dietary / Good for / Inclusive & ownership) with pill-style checkboxes, behind a "More filters" disclosure on desktop and folded into the existing mobile sheet - both native `<details>`, no JS required to open/apply. Verified end-to-end via direct GET requests (no browser JS involved): single-attribute filters, multi-attribute AND combinations, chip removal preserving the other active filters, and stale/unavailable tag keys in a hand-edited URL being silently ignored rather than erroring. Lighthouse accessibility: 100/0 issues, same as every other page type post-Phase-9.

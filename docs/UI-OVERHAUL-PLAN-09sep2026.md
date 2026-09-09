@@ -48,8 +48,8 @@ Spend boldness in exactly two places (defined in Phase 1): the **pearl rating ba
 
 ### Open decisions — confirm before Phase 1
 
-- **Photos.** Does the database actually contain shop photo URLs that are legal to display and host? Google Places photo URIs are short-lived and Places content is subject to storage restrictions, so a design that requires a photo on every one of 813 cards is a liability. Phase 0 answers what exists; the design assumes photos are **optional** either way. → _answer:_
-- **Blog URL structure.** Articles are coming soon (see §10). The path prefix is very expensive to change once articles are indexed, so pick it now even though nothing gets built this cycle: `/blog/[slug]`, `/guides/[slug]`, or city-scoped `/find-boba-shops/[city]/guides/[slug]`. Recommendation: a flat `/guides/[slug]` — it reads as editorial authority rather than a news feed, and keeps articles free to link across cities. → _answer:_
+- **Photos.** Does the database actually contain shop photo URLs that are legal to display and host? Google Places photo URIs are short-lived and Places content is subject to storage restrictions, so a design that requires a photo on every one of 813 cards is a liability. Phase 0 answers what exists; the design assumes photos are **optional** either way. → _answer (2026-09-09): confirmed — design must not require a photo on every card. Owner will likely source and add photos for shops currently missing one over time, but Phase 2's placeholder tile is not a stopgap to be removed later, it's a permanent part of the design for whatever fraction of shops never gets a real photo._
+- **Blog URL structure.** Articles are coming soon (see §10). The path prefix is very expensive to change once articles are indexed, so pick it now even though nothing gets built this cycle: `/blog/[slug]`, `/guides/[slug]`, or city-scoped `/find-boba-shops/[city]/guides/[slug]`. Recommendation: a flat `/guides/[slug]` — it reads as editorial authority rather than a news feed, and keeps articles free to link across cities. → _answer (2026-09-09): confirmed — `/guides/[slug]`._
 
 ---
 
@@ -273,13 +273,28 @@ Long shop names wrap without breaking layout. Missing rating, missing photo, and
 
 ## 6. Phase 5 — Filters and sort
 
-**Build only the dimensions approved in the Phase 0 gate.** If the data supports rating and sort-by-rating and nothing else, ship exactly that. Two filters that always work beat six that are half-empty and make the site feel broken.
+**Amended 2026-09-09, per owner direction:** filters are decided **per city**, not as one global list. If a dimension clears the ≥60%-populated bar in a given city, that city's page gets that filter — it is fine and expected for different cities to offer different filter sets. The goal is a site that genuinely helps people find a shop, not visual consistency of the filter bar across cities.
 
-- **State lives in the URL** as query params (`?sort=rating&open=now`). This keeps filtered views shareable, keeps the server the source of truth, and avoids a client-side data layer.
+**Per-city dimension table (from `docs/AUDIT.md`, recomputed per-city rather than by cross-city minimum):**
+
+| Dimension | Atlanta | Chicago | Dallas | New York | Philadelphia | Seattle | Washington |
+|---|---|---|---|---|---|---|---|
+| Rating (sort + min-rating) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Review count (sort) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Open now (hours) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Delivery | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Wheelchair accessible | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Social media presence | ✅ (75%) | ✅ (68%) | ✅ (77%) | ✅ (70%) | ✅ (71%) | ✅ (63%) | ❌ (54%) |
+
+Rating/reviews/hours/Delivery/Wheelchair-accessible clear 60% in all 7 cities individually (this didn't change from the original cross-city analysis — those five were never close to the line). **Social media presence is the one dimension the per-city approach actually rescues**: it fails the original "minimum across all 7 cities" test only because Washington sits at 54%, but the other six cities clear 60% (63–77%). Ship it everywhere except Washington. Sub-splitting "Wheelchair accessible" into entrance/parking-lot/restroom variants was considered and rejected — the single existing tag already clears 60% everywhere, and fragmenting it into near-duplicate filters adds complexity without adding real capability. LGBTQ+-friendly and ownership-identity attributes (women-owned, etc.) were re-checked per-city too and don't clear 60% in *any* single city (highest is Chicago at 54% for LGBTQ+-friendly) — still not viable as filters anywhere, though real and worth a per-card badge if a later phase wants one.
+
+**In-page search, combined with filters (added 2026-09-09):** a city page needs a text search box that narrows the *currently filtered* result set further — a user should be able to apply "Wheelchair accessible" and then type "milk tea" and get the intersection, not one or the other. Implement as another URL param (e.g. `?q=`) applied server-side alongside tags/sort/minRating/open, matching a shop's `name` (and consider `tags`/`about` keywords if a simple `ILIKE`-style match proves too narrow in testing) — not a client-side-only filter, so it stays server-resolved per Phase 6's rendering rules and degrades correctly with JS disabled, same as the header search in Phase 4. Empty-state copy must account for the combination ("No shops match 'milk tea' with Wheelchair accessible in Seattle. Clear filters to see all 142 shops.").
+
+- **State lives in the URL** as query params (`?sort=rating&open=now&q=...`). This keeps filtered views shareable, keeps the server the source of truth, and avoids a client-side data layer.
 - **Canonical URLs on filtered views point at the unfiltered city URL.** Non-negotiable — filter combinations must not create indexable near-duplicates of pages that currently rank.
-- **Desktop:** a horizontal bar above the grid. Active filters use `--matcha-deep` fill with white text. Applying a filter updates the result count in a live region.
-- **Mobile:** a bottom sheet, opened by a single "Filters" button showing the active count. Sheet has Apply and Clear all. Focus is trapped while open, Escape closes, focus returns to the trigger.
-- **Empty state:** never a bare "No results." Name what was filtered, offer the single most useful escape hatch ("No shops match these filters in Atlanta. Clear filters to see all 118 shops."), and keep the escape hatch as a real link.
+- **Desktop:** a horizontal bar above the grid, search box included in that bar. Active filters use `--matcha-deep` fill with white text. Applying a filter or search updates the result count in a live region.
+- **Mobile:** a bottom sheet, opened by a single "Filters" button showing the active count. Sheet has Apply and Clear all. Focus is trapped while open, Escape closes, focus returns to the trigger. The search box itself stays visible outside the sheet (it's the primary tool, not a secondary filter).
+- **Empty state:** never a bare "No results." Name what was filtered/searched, offer the single most useful escape hatch ("No shops match these filters in Atlanta. Clear filters to see all 96 shops."), and keep the escape hatch as a real link.
 
 ---
 

@@ -304,16 +304,18 @@ The highest-traffic template, the most fragile route, and the one that has serve
 
 ### Layout
 
-**No map on this page.** Single-column, full-width shop grid at every breakpoint, centered in a `1200px` container. City intro copy above the grid, FAQ below it, both keeping their current position in the DOM.
+**Amended 2026-09-09, per owner direction: keep the map, don't remove it.** The original plan below called for dropping the map entirely. Owner decision: it can stay as long as it's unobtrusive, stays near the bottom of the page, and stays lazy-loaded so it doesn't add API cost or weight to the initial render. That's already exactly how it behaves today (`CityMapView` lazy-inits on `IntersectionObserver` with a 300px root margin, and it's already the last section on the page, after the listings) - so this phase keeps that section, just restyles its container to match the new tokens (quiet, not a splashy full-bleed section) rather than deleting it. The reasoning below about split-screen maps still holds and is why this stays a single below-the-fold section, not a split-screen layout next to the grid.
 
-This is deliberate: a split-screen map would multiply Maps API loads across the highest-traffic template, add a client bundle and an INP cost to the pages that rank, and buy less than it costs at this stage. The full grid width also means more shops visible per screen, which is the actual job of a city page. Revisit only if analytics show people looking for it.
+Single-column, full-width shop grid at every breakpoint, centered in a `1200px` container. City intro copy above the grid, FAQ below it (if present), both keeping their current position in the DOM, map section last.
 
-Below the FAQ, reserve a **related reading** slot (see §10) that renders nothing until articles exist.
+A split-screen map would multiply Maps API loads across the highest-traffic template, add a client bundle and an INP cost to the pages that rank, and buy less than it costs at this stage. The full grid width also means more shops visible per screen, which is the actual job of a city page.
+
+Below the map, reserve a **related reading** slot (see §10) that renders nothing until articles exist.
 
 ### Rendering rules — read twice
 
 - **The shop list renders on the server**, in the initial HTML, with no client-side data fetching for listings.
-- **This phase adds no new client components.** If the page currently has zero `'use client'` boundaries beyond the header, it should still have zero when you're done. Filters from Phase 5 are URL-driven and server-resolved.
+- **This phase adds no new client components beyond what already exists.** `CityMapView`, `JumpToMapButton`, and `CityFilterBar` (Phase 5) already exist and stay; nothing new is introduced on top of them.
 - **Existing city intro copy, FAQ blocks, and JSON-LD stay exactly where they are** in the DOM order relative to the listings.
 
 ### Caching
@@ -322,7 +324,7 @@ This phase lands the caching strategy approved in the Phase 0 gate. State the ch
 
 ### Kickoff prompt
 
-> Implement Phase 6 on branch `ui/phase-6-city`. Rebuild `/find-boba-shops/[city]` per §7. Before touching anything, save the raw HTML of the current Atlanta page to a file. After your changes, diff the two for: shop names present, count of internal links, heading outline, and JSON-LD blocks. Show me that diff. Add no map and no new client components. Land the caching strategy approved in the Phase 0 gate, with a comment in the route file explaining the choice.
+> Implement Phase 6 on branch `ui/phase-6-city`. Rebuild `/find-boba-shops/[city]` per §7. Before touching anything, save the raw HTML of the current Atlanta page to a file. After your changes, diff the two for: shop names present, count of internal links, heading outline, and JSON-LD blocks. Show me that diff. Keep the existing map section (restyled, still lazy-loaded, still last on the page) - don't remove it, and don't add any new client component beyond what already exists. Land the caching strategy approved in the Phase 0 gate, with a comment in the route file explaining the choice.
 
 ### Gate — verify against production, not against your own report
 

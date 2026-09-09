@@ -30,7 +30,7 @@ Boldness is spent in exactly two places: the pearl rating badge and the hero. Ev
 
 ## Decisions already made — do not revisit
 
-- **No new map work in this cycle.** No split-screen map on city pages, no maps anywhere they don't already exist.
+- **No new map work in this cycle.** No split-screen map on city pages, no maps anywhere they don't already exist. (Phase 6 originally planned to remove the existing city-page map entirely; owner reversed that 2026-09-09 - it stays, unobtrusive, near the bottom, lazy-loaded. See the Phase 6 section of the plan.)
 - **No save/bookmark feature.**
 - **No "verified" badges.** Real provenance ("Rating and hours from Google, last checked [date]") replaces trust theater.
 

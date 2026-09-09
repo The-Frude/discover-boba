@@ -1,7 +1,9 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getShopBySlug, getAllTags, formatWorkingHours, getShopDescription, parseOpeningHoursSpec } from '@/utils/data'
+import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, parseOpeningHoursSpec, GENERIC_TAGS } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
+import ShopCard from '@/components/ShopCard'
 import ReviewsSection from '@/components/ReviewsSection'
 import JsonLd from '@/components/JsonLd'
 import Breadcrumbs from '@/components/Breadcrumbs'
@@ -157,27 +159,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
     notFound()
   }
   
-  // Group tags by category (simplified approach)
-  const groupedTags: Record<string, string[]> = {
-    'Service Options': [],
-    'Accessibility': [],
-    'Features': [],
-    'Other': [],
-  }
-  
-  // Categorize tags (simplified logic)
-  shop.tags.forEach(tag => {
-    if (tag.includes('delivery') || tag.includes('pickup') || tag.includes('Takeout') || tag.includes('Dine-in')) {
-      groupedTags['Service Options'].push(tag)
-    } else if (tag.includes('accessible') || tag.includes('Accessibility')) {
-      groupedTags['Accessibility'].push(tag)
-    } else if (tag.includes('selection') || tag.includes('options')) {
-      groupedTags['Features'].push(tag)
-    } else {
-      groupedTags['Other'].push(tag)
-    }
-  })
-  
+  // Distinguishing tags only - same rule as ShopCard, drops the handful of
+  // tags every shop carries (Bubble Tea, Takeout, etc.) since they add
+  // nothing on a page that's already titled "boba shop."
+  const distinguishingTags = shop.tags.filter((tag) => !GENERIC_TAGS.includes(tag))
+
   // user_ratings_total is frequently 0 in the source data even when rating
   // is populated - resolve the real count so we never show a star rating
   // backed by zero reviews.
@@ -190,6 +176,21 @@ export default async function ShopPage({ params }: ShopPageProps) {
   } else if (shop.working_hours) {
     hours = formatWorkingHours(shop.working_hours);
   }
+  const todayIndex = (new Date().getDay() + 6) % 7 // 0 = Monday, matching Google's weekday_text order
+  const todayHours = hours[todayIndex]
+  const openStatus = getOpenStatus(shop)
+
+  // docs/UI-OVERHAUL-PLAN-09sep2026.md §Phase 7: real enriched or CSV-
+  // sourced copy only - generateShopBlurb()'s templated filler doesn't
+  // count as content worth a whole section, so shops without either just
+  // skip straight to the facts panel instead of showing thin boilerplate.
+  const realDescription = (shop.description_enriched && shop.description_enriched.trim())
+    || (shop.description && shop.description.trim())
+    || ''
+
+  const hasSocial = Boolean(shop.facebook || shop.instagram || shop.twitter || shop.tiktok)
+  const isPremiumActive = Boolean(shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date())
+  const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.formatted_address)}`
 
   // Resolve the breadcrumb's city name/path once so the visible breadcrumb
   // and the BreadcrumbList JSON-LD can't drift out of sync with each other.
@@ -235,11 +236,52 @@ export default async function ShopPage({ params }: ShopPageProps) {
     }
   }
 
+  // Nearby shops: same metro city, tier/premium-sorted like the city page,
+  // just excluding this shop and capped at 6 real, crawlable cards.
+  const cityShops = await getShopsByCity(shop.city)
+  const nearbyShops = cityShops.filter((s) => s.id !== shop.id).slice(0, 6)
+
+  const SocialLinks = hasSocial && (
+    <div className="flex items-center gap-3">
+      {shop.facebook && (
+        <a href={shop.facebook} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-muted)' }} aria-label={`${shop.name} on Facebook`}>
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+          </svg>
+        </a>
+      )}
+      {shop.instagram && (
+        <a href={shop.instagram} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-muted)' }} aria-label={`${shop.name} on Instagram`}>
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+          </svg>
+        </a>
+      )}
+      {shop.twitter && (
+        <a href={shop.twitter} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-muted)' }} aria-label={`${shop.name} on Twitter`}>
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+          </svg>
+        </a>
+      )}
+      {shop.tiktok && (
+        <a href={shop.tiktok} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-muted)' }} aria-label={`${shop.name} on TikTok`}>
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0115.54 3h-3.09v12.4a2.592 2.592 0 01-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 004.3 1.38V7.3s-1.88.09-3.24-1.48z"/>
+          </svg>
+        </a>
+      )}
+    </div>
+  )
+
+  const outlinedActionClass =
+    'inline-flex items-center justify-center px-4 py-2 rounded-control text-sm font-semibold transition-colors duration-motion ease-motion focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]'
+
   return (
-    <main className="min-h-screen py-12">
+    <main className="min-h-screen py-8 md:py-12">
       <JsonLd data={localBusinessJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
-      <div className="container-custom">
+      <div className="container-custom max-w-3xl">
         {/* Breadcrumbs */}
         <div className="mb-6">
           <Breadcrumbs
@@ -251,374 +293,281 @@ export default async function ShopPage({ params }: ShopPageProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Shop Header */}
-            <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-8 ${
-              shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date() 
-                ? 'border-2 border-yellow-400 dark:border-yellow-600 relative' 
-                : ''
-            }`}>
-              {shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date() && (
-                <div className="absolute top-0 right-0 bg-yellow-400 dark:bg-yellow-600 text-white px-3 py-1 text-sm font-bold shadow-sm">
-                  FEATURED
-                </div>
-              )}
-              {shop.photos && shop.photos.length > 0 && (
-                <div className="relative h-64 md:h-80 w-full">
-                  <OptimizedImage
-                    src={shop.photos[0]}
-                    alt={shop.name}
-                    fill
-                    priority
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 66vw"
-                  />
-                </div>
-              )}
-              <div className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                  <div className="flex flex-col">
-                    <h1 className="text-3xl font-bold mb-2">{shop.name}</h1>
-                    
-                    {/* Social Media Sharing */}
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Share:</span>
-                      <a 
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        aria-label="Share on Facebook"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                        </svg>
-                      </a>
-                      <a 
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${shop.name} on Discover Boba!`)}&url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-200"
-                        aria-label="Share on Twitter"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                        </svg>
-                      </a>
-                      <a 
-                        href={`mailto:?subject=${encodeURIComponent(`Check out ${shop.name} on Discover Boba!`)}&body=${encodeURIComponent(`I found this great boba shop on Discover Boba: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://discoverboba.com'}/boba-shop/${shop.slug}`)}`}
-                        className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                        aria-label="Share via Email"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                      </a>
-                    </div>
-                  </div>
-                  
-                  {reviewCount > 0 && shop.rating > 0 ? (
-                    <div className="flex items-center">
-                      <div className="flex items-center mr-2">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-5 h-5 ${i < Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        {shop.rating.toFixed(1)} (
-                        <a
-                          href={shop.reviews_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-600 dark:text-primary-400 hover:underline"
-                        >
-                          {reviewCount} reviews
-                        </a>
-                        )
-                      </span>
-                    </div>
-                  ) : (
-                    <a href="#reviews" className="text-gray-600 dark:text-gray-300 hover:underline text-sm font-medium">
-                      No reviews yet — be the first to review!
-                    </a>
-                  )}
-                </div>
-                
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  {shop.formatted_address}
-                </p>
-                
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {shop.tags.map((tag, index) => (
-                    <span key={index} className="tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
-                  {shop.website && (
-                    <a 
-                      href={shop.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-primary"
-                    >
-                      Visit Website
-                    </a>
-                  )}
-                  {shop.formatted_phone_number && (
-                    <a 
-                      href={`tel:${shop.formatted_phone_number.replace(/\D/g, '')}`}
-                      className="btn-secondary"
-                    >
-                      Call
-                    </a>
-                  )}
-                  {/* Premium Order Button */}
-                  {shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date() && shop.featured_order_url ? (
-                    <a 
-                      href={shop.featured_order_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                    >
-                      Order Now
-                    </a>
-                  ) : shop.order_links && (
-                    <a 
-                      href={shop.order_links} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-primary"
-                    >
-                      Order Now
-                    </a>
-                  )}
-                  {shop.menu_link && (
-                    <a
-                      href={shop.menu_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary"
-                    >
-                      See Menu
-                    </a>
-                  )}
-                  {(shop.reservation_links || shop.booking_appointment_link) && (
-                    <a
-                      href={shop.reservation_links || shop.booking_appointment_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary"
-                    >
-                      Book a Table
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* About */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">About {shop.name}</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                {getShopDescription(shop)}
-              </p>
-            </div>
-
-            {/* Hours and Contact Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <div className="flex flex-col md:flex-row md:justify-between">
-                <div className="md:w-1/2 mb-6 md:mb-0 md:pr-4">
-                  <h2 className="text-xl font-bold mb-4">Hours of Operation</h2>
-                  {hours.length > 0 ? (
-                    <ul className="space-y-2">
-                      {hours.map((day, index) => (
-                        <li key={index} className="flex">
-                          <span className="font-medium w-32">{day.split(': ')[0]}:</span>
-                          <span className="text-gray-600 dark:text-gray-300">{day.split(': ')[1]}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-600 dark:text-gray-300">Hours information not available</p>
-                  )}
-                </div>
-                
-                <div className="md:w-1/2 md:pl-4 md:border-l md:border-gray-200 dark:md:border-gray-700">
-                  <h2 className="text-xl font-bold mb-4">Contact Information</h2>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.formatted_address)}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary-600 dark:text-primary-400 hover:underline"
-                      >
-                        {shop.formatted_address}
-                      </a>
-                    </li>
-                    
-                    {shop.formatted_phone_number && (
-                      <li className="flex items-start">
-                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                        </svg>
-                        <a 
-                          href={`tel:${shop.formatted_phone_number.replace(/\D/g, '')}`}
-                          className="text-primary-600 dark:text-primary-400 hover:underline"
-                        >
-                          {shop.formatted_phone_number}
-                        </a>
-                      </li>
-                    )}
-                    
-                    {shop.email && (
-                      <li className="flex items-start">
-                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        <a 
-                          href={`mailto:${shop.email}`}
-                          className="text-primary-600 dark:text-primary-400 hover:underline"
-                        >
-                          {shop.email}
-                        </a>
-                      </li>
-                    )}
-                    
-                    {shop.website && (
-                      <li className="flex items-start">
-                        <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
-                        </svg>
-                        <a 
-                          href={shop.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary-600 dark:text-primary-400 hover:underline"
-                        >
-                          {shop.website.replace(/^https?:\/\/(www\.)?/, '')}
-                        </a>
-                      </li>
-                    )}
-
-                    {(shop.facebook || shop.instagram || shop.twitter || shop.tiktok) && (
-                      <li className="flex items-center gap-3 pt-1">
-                        {shop.facebook && (
-                          <a href={shop.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" aria-label={`${shop.name} on Facebook`}>
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                            </svg>
-                          </a>
-                        )}
-                        {shop.instagram && (
-                          <a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800 dark:text-pink-400 dark:hover:text-pink-300" aria-label={`${shop.name} on Instagram`}>
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                            </svg>
-                          </a>
-                        )}
-                        {shop.twitter && (
-                          <a href={shop.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-200" aria-label={`${shop.name} on Twitter`}>
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                            </svg>
-                          </a>
-                        )}
-                        {shop.tiktok && (
-                          <a href={shop.tiktok} target="_blank" rel="noopener noreferrer" className="text-gray-800 hover:text-black dark:text-gray-200 dark:hover:text-white" aria-label={`${shop.name} on TikTok`}>
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0115.54 3h-3.09v12.4a2.592 2.592 0 01-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 004.3 1.38V7.3s-1.88.09-3.24-1.48z"/>
-                            </svg>
-                          </a>
-                        )}
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            {/* Reviews Section */}
-            <ReviewsSection shop={shop} />
+        {/* Header block - no hero image unless a real photo exists; a
+            hero-scale generated tile would read as a placeholder. */}
+        {shop.photos && shop.photos.length > 0 && (
+          <div className="relative w-full h-56 md:h-72 rounded-card overflow-hidden mb-5">
+            <OptimizedImage
+              src={shop.photos[0]}
+              alt={shop.name}
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 768px"
+            />
           </div>
-          
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Features */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">Features</h2>
-              {Object.entries(groupedTags).map(([category, tags]) => (
-                tags.length > 0 && (
-                  <div key={category} className="mb-4">
-                    <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{category}</h3>
-                    <ul className="space-y-1">
-                      {tags.map((tag, index) => (
-                        <li key={index} className="flex items-center text-gray-600 dark:text-gray-300">
-                          <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              ))}
-            </div>
-            
-            {/* Premium Info or Ad Placeholder */}
-            {shop.is_premium && shop.featured_until && new Date(shop.featured_until) > new Date() ? (
-              <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-bold mb-4 text-yellow-800 dark:text-yellow-300 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                  Featured Boba Shop
-                </h2>
-                <p className="text-yellow-700 dark:text-yellow-400 mb-4">
-                  This is a premium listing, featuring special offers and priority placement in search results.
-                </p>
-                {shop.featured_order_url && (
-                  <a 
-                    href={shop.featured_order_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block w-full bg-yellow-500 hover:bg-yellow-600 text-white text-center font-medium py-3 px-4 rounded-md transition-colors"
-                  >
-                    Order Now
-                  </a>
-                )}
+        )}
+
+        {isPremiumActive && (
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--matcha-deep)' }}>
+            Featured listing
+          </p>
+        )}
+
+        <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: 'var(--ink)' }}>
+          {shop.name}
+        </h1>
+
+        <div className="flex flex-wrap items-center gap-3 mb-1">
+          {reviewCount > 0 && shop.rating > 0 ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="flex items-center justify-center text-white font-semibold rounded-full flex-shrink-0"
+                style={{ background: 'var(--taro-deep)', width: 44, height: 44 }}
+                aria-label={`Rated ${shop.rating.toFixed(1)} out of 5 on Google`}
+              >
+                {shop.rating.toFixed(1)}
               </div>
-            ) : (
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-6 text-center mb-8">
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Advertisement</p>
-                <div className="h-[250px] flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 mt-2">
-                  <p className="text-gray-400 dark:text-gray-500">Ad Space</p>
-                </div>
+              <a
+                href={shop.reviews_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm underline"
+                style={{ color: 'var(--ink-muted)' }}
+              >
+                {reviewCount} reviews on Google
+              </a>
+            </div>
+          ) : (
+            <a href="#reviews" className="text-sm underline" style={{ color: 'var(--ink-muted)' }}>
+              No reviews yet — be the first to review!
+            </a>
+          )}
+        </div>
+
+        <p style={{ color: 'var(--ink-muted)' }}>{breadcrumbCityName}, {shop.state}</p>
+
+        {openStatus && (
+          <p className="text-sm mt-1 flex items-center gap-1.5" style={{ color: 'var(--ink-muted)' }}>
+            <span
+              aria-hidden="true"
+              className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ background: openStatus.isOpen ? 'var(--matcha-deep)' : 'var(--ink-muted)' }}
+            />
+            <span>
+              {openStatus.label === 'Closed today'
+                ? 'Closed today'
+                : `${openStatus.isOpen ? 'Open now' : 'Closed'} · ${openStatus.label}`}
+            </span>
+          </p>
+        )}
+
+        {/* Action row - Directions always available (address always exists);
+            everything else only renders when the data behind it exists. */}
+        <div className="flex flex-wrap gap-3 mt-5 mb-8">
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={outlinedActionClass}
+            style={{ background: 'var(--matcha-deep)', color: '#FFFFFF' }}
+          >
+            Directions
+          </a>
+          {shop.formatted_phone_number && (
+            <a
+              href={`tel:${shop.formatted_phone_number.replace(/\D/g, '')}`}
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Call
+            </a>
+          )}
+          {shop.website && (
+            <a
+              href={shop.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Website
+            </a>
+          )}
+          {shop.menu_link && (
+            <a
+              href={shop.menu_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Menu
+            </a>
+          )}
+          {isPremiumActive && shop.featured_order_url ? (
+            <a
+              href={shop.featured_order_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Order Now
+            </a>
+          ) : shop.order_links && (
+            <a
+              href={shop.order_links}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Order Now
+            </a>
+          )}
+          {(shop.reservation_links || shop.booking_appointment_link) && (
+            <a
+              href={shop.reservation_links || shop.booking_appointment_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={outlinedActionClass}
+              style={{ border: '1px solid var(--border-control)', color: 'var(--ink)' }}
+            >
+              Book a Table
+            </a>
+          )}
+        </div>
+
+        {/* Facts panel - what people came for, above the prose. */}
+        <div className="rounded-card p-6 mb-8" style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}>
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div>
+              <dt className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>Hours</dt>
+              <dd style={{ color: 'var(--ink-muted)' }}>
+                {hours.length > 0 ? (
+                  <>
+                    <p className="text-sm mb-2">
+                      {todayHours ? todayHours.split(': ').slice(1).join(': ') || todayHours : 'Not listed today'}
+                    </p>
+                    <details>
+                      <summary className="text-sm cursor-pointer underline" style={{ color: 'var(--matcha-deep)' }}>
+                        See full week
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-sm">
+                        {hours.map((day, index) => (
+                          <li key={index} className="flex gap-2">
+                            <span className="font-medium w-24 flex-shrink-0">{day.split(': ')[0]}</span>
+                            <span>{day.split(': ')[1]}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </>
+                ) : (
+                  <p className="text-sm">Hours not listed</p>
+                )}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>Address</dt>
+              <dd className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+                <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                  {shop.formatted_address}
+                </a>
+              </dd>
+            </div>
+
+            {shop.formatted_phone_number && (
+              <div>
+                <dt className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>Phone</dt>
+                <dd className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+                  <a href={`tel:${shop.formatted_phone_number.replace(/\D/g, '')}`} className="underline">
+                    {shop.formatted_phone_number}
+                  </a>
+                </dd>
               </div>
             )}
-          </div>
+
+            {shop.email && (
+              <div>
+                <dt className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>Email</dt>
+                <dd className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+                  <a href={`mailto:${shop.email}`} className="underline">{shop.email}</a>
+                </dd>
+              </div>
+            )}
+
+            {hasSocial && (
+              <div>
+                <dt className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>Social</dt>
+                <dd>{SocialLinks}</dd>
+              </div>
+            )}
+          </dl>
         </div>
+
+        {/* Description - real content only (enriched or CSV-sourced). No
+            section at all when neither exists; the facts panel above
+            already carries the page. */}
+        {realDescription && (
+          <div className="mb-8">
+            <h2 className="text-xl mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--ink)' }}>
+              About {shop.name}
+            </h2>
+            <p style={{ color: 'var(--ink-muted)' }}>{realDescription}</p>
+          </div>
+        )}
+
+        {distinguishingTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {distinguishingTags.map((tag) => (
+              <span
+                key={tag}
+                className="text-xs font-semibold px-2.5 py-1 rounded-pill"
+                style={{ background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--rule)' }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Provenance - real trust, not a badge. */}
+        {shop.updated_at && (
+          <p className="text-xs mb-8" style={{ color: 'var(--ink-muted)' }}>
+            Rating and hours from Google, last checked{' '}
+            {new Date(shop.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
+          </p>
+        )}
+
+        {/* Reviews Section */}
+        <ReviewsSection shop={shop} />
+
+        {/* Nearby shops - crawlable links back into the city, genuinely
+            useful to a reader still deciding. */}
+        {nearbyShops.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--ink)' }}>
+                Nearby boba shops in {breadcrumbCityName}
+              </h2>
+              <Link href={`/find-boba-shops/${breadcrumbCityPath}`} className="text-sm underline flex-shrink-0" style={{ color: 'var(--matcha-deep)' }}>
+                View all shops in {breadcrumbCityName}
+              </Link>
+            </div>
+            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+              {nearbyShops.map((nearbyShop) => (
+                <ShopCard key={nearbyShop.id} shop={nearbyShop} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related reading slot (docs/UI-OVERHAUL-PLAN-09sep2026.md §10) -
+            reserved for Phase 10 guides. No guide content exists yet, so
+            intentionally nothing renders here today. */}
       </div>
     </main>
   )

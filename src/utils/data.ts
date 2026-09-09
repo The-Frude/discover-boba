@@ -43,6 +43,7 @@ export interface Shop {
   featured_logo?: string;
   featured_order_url?: string;
   owner_id?: string;
+  updated_at?: string;
 }
 
 // Tags applied to every shop by extractTags() regardless of its actual

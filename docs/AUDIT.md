@@ -258,3 +258,28 @@ Ranked by user impact.
 ## Gate
 
 Per the plan: this document is the required output for Phase 0. The filter list in §B and the caching proposal in §D need explicit written approval (or amendment) before Phase 1 begins.
+
+---
+
+## F. Phase 9 — accessibility findings and final performance pass
+
+### Accessibility sweep
+
+Ran Lighthouse's accessibility category (axe-core under the hood - no interactive "axe DevTools" extension available in this environment, used as the closest equivalent) against home, a city page, and a shop page. Two real, previously-unflagged issues, both fixed:
+
+1. **`.btn-primary` contrast** — `bg-primary-600` (`#0284c7`) with white text measured 4.10:1 against the 4.5:1 WCAG AA minimum. This is the original pre-overhaul button class, used site-wide (search buttons, CTAs). Fixed by shifting the class to `primary-700` (5.93:1), with `hover`/`active` steps shifted down to match (`src/styles/globals.css`).
+2. **Pagination's current-page indicator** used the same raw `bg-primary-600` utility directly (not the shared class, so the fix above didn't cover it) - moved to `var(--matcha-deep)` (5.04:1) for both the contrast fix and visual consistency with the rest of the redesigned city page.
+3. **`CityMapView`'s "Loading map..." placeholder** - `text-gray-500` on `bg-gray-200` measured 3.9:1; the dark-mode pairing (`text-gray-400` on `bg-gray-700`) was also failing at 4.06:1. Both moved to `gray-700`/`gray-300`.
+4. **Mobile header search button** - the icon-only submit button was a 16×16px hit target against the 24×24px minimum. Enlarged via padding, keeping the icon's visual size unchanged.
+
+All three page types score 100/100 with zero flagged issues after these fixes. Not exhaustive - a full manual keyboard-only pass and a real screen reader pass weren't performed; this is a mechanical-testing pass, not a substitute for one.
+
+Also in this phase: added skeleton/error/empty states to `ReviewsList` (the one genuinely client-side-fetched piece of content on the public site - matches real review-item dimensions, adds a working retry button, drops the exclamation mark from the empty state); rebuilt `/not-found` with a real search input and links to all 7 cities; fixed `global-error.tsx`'s copy (was "Something went wrong!" / "We're sorry, but..." - both violate the plan's no-apology/no-exclamation rule for error states); gave the map's error fallback a working "Try again" button (required extracting it into its own Client Component - `src/components/MapErrorFallback.tsx` - since a plain `onClick` can't be passed as a prop from a Server Component to `<ErrorBoundary fallback={...}>`, which crashed the city page at runtime until caught in testing); brought `/find-boba-shops` (the all-cities index, not touched by any earlier phase) up to the same tile-based card pattern as the homepage and city pages, fixing a missing `motion-reduce` variant and an arrow-suffixed link in the process; and deleted `src/components/MapView.tsx` (dead code, flagged in §E finding 6, safe to remove once a phase touched shop-page files - Phase 7 did).
+
+**Explicitly out of scope, left alone:** the dashboard/admin area (shop-owner and internal tooling, never part of this workstream per the plan's own page list) still uses `animate-pulse`/`animate-spin` without `motion-reduce` variants and the old `primary`/`secondary` palette throughout. A handful of public-site forms (`ContactForm`, `ReviewForm`, auth forms) and `Pagination`'s neutral (non-current-page) buttons also still reference the old palette - none of these surfaced as real contrast failures, so migrating them was treated as the cosmetic-consistency cleanup already flagged in §E finding 7, not an accessibility fix, and left for a future pass rather than expanding this phase further.
+
+### Final performance pass
+
+Numbers below are pending a live-production Lighthouse run after this phase merges and deploys (same methodology used for every phase gate so far - local `next start` numbers have already proven unreliable once in this project, see the Phase 8 homepage LCP discrepancy). This section will be updated with real production numbers immediately after merge, compared against the Phase 0 baseline in §C.
+
+**Methodology note carried over from Phase 8:** Lighthouse's `simulate` throttling method (used for the original Phase 0 baseline) produced a materially inflated, inconsistent LCP reading for the redesigned homepage after its hero image was removed (three live runs: 4.9s / 4.8s / 4.1s, no real improvement over the 4.8s baseline) while `--throttling-method=devtools` (real throttled execution) showed a consistent, much better 2.1s. This looks like a `simulate` modeling artifact for pages whose resource-loading shape changed significantly, not a real regression. Worth keeping in mind interpreting any single simulate-mode number in isolation on this project going forward - treat a large swing as a signal to re-check with `devtools` throttling before concluding anything, and prefer a 3-run median over a single reading.

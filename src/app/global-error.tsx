@@ -21,10 +21,10 @@ export default function GlobalError({
         <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
             <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
-              Something went wrong!
+              Something went wrong
             </h1>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              We're sorry, but something unexpected happened. Our team has been notified and is working to fix the issue.
+              This page hit an unexpected error. It's been logged and reported automatically.
             </p>
             <button
               onClick={() => reset()}

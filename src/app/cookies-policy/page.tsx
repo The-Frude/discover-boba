@@ -26,7 +26,7 @@ export default function CookiesPolicyPage() {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
-            alt="Cookies Policy"
+            alt=""
             fill
             priority
             className="object-cover"

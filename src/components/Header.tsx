@@ -109,7 +109,7 @@ export default function Header() {
                   border: '1px solid var(--rule)',
                 }}
               />
-              <button type="submit" className="absolute left-2.5 top-2.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]" aria-label="Search">
+              <button type="submit" className="absolute left-1 top-1 p-1.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]" aria-label="Search">
                 {SearchIcon}
               </button>
             </form>
@@ -153,7 +153,7 @@ export default function Header() {
               className="w-full pl-9 pr-4 py-2 rounded-control text-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]"
               style={{ background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--rule)' }}
             />
-            <button type="submit" className="absolute left-2.5 top-2.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]" aria-label="Search">
+            <button type="submit" className="absolute left-1 top-1 p-1.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]" aria-label="Search">
               {SearchIcon}
             </button>
           </form>

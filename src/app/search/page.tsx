@@ -76,7 +76,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
-            alt="Search Results"
+            alt=""
             fill
             priority
             className="object-cover"

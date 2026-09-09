@@ -193,7 +193,7 @@ export default function CityMapView({ shops, cityName }: CityMapViewProps) {
         className="w-full h-[400px] bg-gray-200 dark:bg-gray-700 rounded-lg"
       >
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-700 dark:text-gray-300">
             Loading map...
           </p>
         </div>

@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
-            alt="Privacy Policy"
+            alt=""
             fill
             priority
             className="object-cover"

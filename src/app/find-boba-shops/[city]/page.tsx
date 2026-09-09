@@ -11,6 +11,7 @@ import OptimizedImage from '@/components/OptimizedImage'
 import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import Breadcrumbs from '@/components/Breadcrumbs'
+import MapErrorFallback from '@/components/MapErrorFallback'
 import { CITY_INTROS } from './city-intros'
 
 // docs/UI-OVERHAUL-PLAN-09sep2026.md §Phase 5: filters are curated per
@@ -367,18 +368,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--ink-muted)' }}>
             Find boba shops near you on the map
           </h2>
-          <ErrorBoundary
-            fallback={
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-6 text-center">
-                <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
-                  Map failed to load
-                </h3>
-                <p className="text-red-700 dark:text-red-300">
-                  We couldn't load the map view. Please try refreshing the page.
-                </p>
-              </div>
-            }
-          >
+          <ErrorBoundary fallback={<MapErrorFallback />}>
             <CityMapView shops={filteredShops} cityName={city.name} />
           </ErrorBoundary>
         </div>

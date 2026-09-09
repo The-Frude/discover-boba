@@ -77,7 +77,7 @@ export default function FAQPage() {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/boba-cat.jpeg"
-            alt="Boba Tea FAQ"
+            alt=""
             fill
             priority
             className="object-cover"

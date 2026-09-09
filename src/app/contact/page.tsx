@@ -19,7 +19,7 @@ export default function ContactPage() {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
-            alt="Contact Us"
+            alt=""
             fill
             priority
             className="object-cover"

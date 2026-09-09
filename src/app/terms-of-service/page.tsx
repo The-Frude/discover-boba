@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
         <div className="absolute inset-0 z-0">
           <OptimizedImage
             src="/images/header-holder.jpg"
-            alt="Terms of Service"
+            alt=""
             fill
             priority
             className="object-cover"

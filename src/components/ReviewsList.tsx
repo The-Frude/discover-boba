@@ -11,29 +11,33 @@ export default function ReviewsList({ shopSlug }: ReviewsListProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+  const [retryKey, setRetryKey] = useState(0)
+
   useEffect(() => {
+    let cancelled = false
     const fetchReviews = async () => {
       try {
         setLoading(true)
+        setError(null)
         const response = await fetch(`/api/reviews?shopSlug=${shopSlug}`)
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch reviews')
         }
-        
+
         const data = await response.json()
-        setReviews(data)
+        if (!cancelled) setReviews(data)
       } catch (err) {
-        setError('Failed to load reviews. Please try again later.')
+        if (!cancelled) setError("This shop's reviews didn't load.")
         console.error('Error fetching reviews:', err)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-    
+
     fetchReviews()
-  }, [shopSlug])
+    return () => { cancelled = true }
+  }, [shopSlug, retryKey])
   
   // Format date to a readable format
   const formatDate = (dateString: string) => {
@@ -65,29 +69,44 @@ export default function ReviewsList({ shopSlug }: ReviewsListProps) {
   }
   
   if (loading) {
+    // Skeleton matches a real review item's shape (name line, stars+date
+    // line, two-line comment) so nothing shifts when real content arrives.
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="space-y-6" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 animate-pulse motion-reduce:animate-none">
+            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+            <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+            <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+            <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        ))}
       </div>
     )
   }
-  
+
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-100 p-4 rounded-md">
-        {error}
+      <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-100 p-4 rounded-md flex items-center justify-between gap-4">
+        <span>{error}</span>
+        <button
+          onClick={() => setRetryKey((k) => k + 1)}
+          className="text-sm font-semibold underline flex-shrink-0"
+        >
+          Try again
+        </button>
       </div>
     )
   }
-  
+
   if (reviews.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600 dark:text-gray-400">No reviews yet. Be the first to leave a review!</p>
+        <p className="text-gray-600 dark:text-gray-400">No reviews yet. Be the first to leave one.</p>
       </div>
     )
   }
-  
+
   return (
     <div className="space-y-6">
       {reviews.map((review) => (

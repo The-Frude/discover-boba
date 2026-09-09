@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
+import ShopTile from '@/components/ShopTile'
 
 // Internal design-review page only (docs/UI-OVERHAUL-PLAN-09sep2026.md
-// Phase 1). Not linked from anywhere, not in sitemap.ts, noindex'd below.
+// Phase 1-2). Not linked from anywhere, not in sitemap.ts, noindex'd below.
 export const metadata: Metadata = {
   title: 'Design Tokens (internal)',
   robots: {
@@ -227,6 +228,36 @@ export default function DevTokensPage() {
             aria-label="Rated 4.6 out of 5 on Google"
           >
             4.6
+          </div>
+        </section>
+
+        {/* Placeholder art system (Phase 2) */}
+        <section>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.75rem', marginBottom: '1rem' }}>
+            Placeholder art system (ShopTile)
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-muted)' }}>
+            12 different seeds, no real photo for any of them, so every tile below is generated. Same seed always
+            produces the same tile — reload this page and compare. One of the 6 palettes repeats twice here on
+            purpose (12 seeds ÷ 6 palettes) to show that shops sharing a palette still look distinct from each other.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {[
+              'teamo-tea-cafe', 'boba-bar-tea-house', 'kung-fu-tea-duluth', 'sharetea-seattle',
+              'gong-cha-eden-center', 'wais-gong-fu-tea-house', 'yoyo-boba-tea', 'planet-smoothie',
+              'viets-cuisine', 'tea-top', 'the-bubble-hut', 'ding-tea-atlanta',
+            ].map((seed) => (
+              <div key={seed}>
+                <ShopTile id={seed} alt={seed} />
+                <p className="text-xs mt-1 truncate" style={{ color: 'var(--ink-muted)' }}>{seed}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm mt-6 mb-2" style={{ color: 'var(--ink-muted)' }}>
+            Same component, with a real photo URL — the tile is the fallback, never shown when a photo exists:
+          </p>
+          <div className="w-48">
+            <ShopTile id="teamo-tea-cafe" imageUrl="/images/boba-cat.jpeg" alt="Example real photo" />
           </div>
         </section>
 

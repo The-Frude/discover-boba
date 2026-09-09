@@ -21,18 +21,25 @@ import { CITY_INTROS } from './city-intros'
 // gated per city.
 const SOCIAL_FILTER_EXCLUDED_CITIES = new Set(['washington'])
 
-// NOTE: this page reads `searchParams` (for page/tags/sort/minRating),
-// which is a Next.js "Dynamic API" - it forces the whole route to render
-// fresh on every request, for every URL including the plain no-query-param
-// one, regardless of `generateStaticParams` above. Confirmed via
-// .next/prerender-manifest.json, which has no entry at all for this route
-// (contrast with sitemap.ts, which genuinely gets `initialRevalidateSeconds`
-// there). A `revalidate` export here is silently ignored by Next.js - there
-// is no static/ISR cache for it to apply to, so don't add one back as a fix
-// for perceived staleness; it won't do anything. If this page ever stops
-// reading searchParams and needs real caching again, that's when a
-// revalidate export (or on-demand revalidatePath after data changes) would
-// actually take effect.
+// CACHING STRATEGY (landed here in Phase 6, per docs/UI-OVERHAUL-PLAN-09sep2026.md
+// §7's caching gate): this route is, and stays, fully dynamic - always
+// rendered fresh, no ISR, no ambient cache. That's not a gap to fix; it's the
+// deliberate choice for the highest-traffic template on a site that has
+// served stale/inconsistent content from this exact route three times before.
+// Freshness wins over the cost of a cache miss on every request.
+//
+// Mechanically: this page reads `searchParams` (for page/sort/minRating/
+// delivery/wheelchair/social/open/q), which is a Next.js "Dynamic API" - it
+// forces the whole route to render fresh on every request, for every URL
+// including the plain no-query-param one, regardless of `generateStaticParams`
+// above. Confirmed via .next/prerender-manifest.json, which has no entry at
+// all for this route (contrast with sitemap.ts, which genuinely gets
+// `initialRevalidateSeconds` there). A `revalidate` export here is silently
+// ignored by Next.js - there is no static/ISR cache for it to apply to, so
+// don't add one back as a fix for perceived staleness; it won't do anything.
+// If this page ever stops reading searchParams and needs real caching again,
+// that's when a revalidate export (or on-demand revalidatePath after data
+// changes) would actually take effect.
 
 // Hand-written per-city SEO copy - avoids the single shared template
 // (`Best Boba Tea Shops in ${city.name}, ${city.state}`) showing up as
@@ -262,7 +269,10 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
         </div>
         <div className="container-custom relative z-10 text-center text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1
+            className="text-4xl md:text-5xl mb-4"
+            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
+          >
             Boba Shops in {city.name}
           </h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
@@ -272,10 +282,10 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       </section>
 
       {/* Shop Listings */}
-      <section className="py-12 bg-gray-50 dark:bg-gray-900">
+      <section className="py-12" style={{ background: 'var(--bg)' }}>
         <div className="container-custom">
           {CITY_INTROS[city.slug] && (
-            <p className="text-gray-700 dark:text-gray-300 max-w-4xl mb-10 leading-relaxed">
+            <p className="max-w-4xl mb-10 leading-relaxed" style={{ color: 'var(--ink-muted)' }}>
               {CITY_INTROS[city.slug]}
             </p>
           )}
@@ -298,7 +308,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           />
 
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--ink)' }}>
               {filteredShops.length} Shops Found
             </h2>
             <JumpToMapButton />
@@ -332,8 +342,8 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
           {filteredShops.length === 0 && (
             <div className="text-center py-12">
-              <h3 className="text-xl font-medium mb-2">No shops match your filters</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <h3 className="text-xl font-medium mb-2" style={{ color: 'var(--ink)' }}>No shops match your filters</h3>
+              <p className="mb-4" style={{ color: 'var(--ink-muted)' }}>
                 {q
                   ? `No shops match "${q}"${activeChips.length > 1 ? ' with your selected filters' : ''} in ${city.name}.`
                   : `No shops match these filters in ${city.name}.`}{' '}
@@ -346,12 +356,18 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           )}
         </div>
       </section>
-      
-      {/* Map Section */}
-      <section id="map-section" className="py-12 bg-white dark:bg-gray-800">
+
+      {/* Map - kept per owner direction (2026-09-09): unobtrusive, last on
+          the page, lazy-loaded via IntersectionObserver in CityMapView so it
+          never costs a Maps API load unless a visitor actually scrolls this
+          far. Deliberately quieter styling than the listings above it - this
+          is a reference tool, not the page's main job. */}
+      <section id="map-section" className="py-8" style={{ background: 'var(--bg)', borderTop: '1px solid var(--rule)' }}>
         <div className="container-custom">
-          <h2 className="text-2xl font-bold mb-6">Find Boba Shops on the Map</h2>
-          <ErrorBoundary 
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--ink-muted)' }}>
+            Find boba shops near you on the map
+          </h2>
+          <ErrorBoundary
             fallback={
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-6 text-center">
                 <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
@@ -367,6 +383,11 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
           </ErrorBoundary>
         </div>
       </section>
+
+      {/* Related reading slot (docs/UI-OVERHAUL-PLAN-09sep2026.md §10) -
+          reserved for Phase 10 guides. No guide content or ArticleCard
+          usage exists yet, so intentionally nothing renders here today;
+          this comment is the insertion point for that phase. */}
     </main>
   )
 }

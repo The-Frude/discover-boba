@@ -1,5 +1,8 @@
 import { Metadata } from 'next'
 import ShopTile from '@/components/ShopTile'
+import ShopCard from '@/components/ShopCard'
+import ArticleCard from '@/components/ArticleCard'
+import { getShopBySlug } from '@/utils/data'
 
 // Internal design-review page only (docs/UI-OVERHAUL-PLAN-09sep2026.md
 // Phase 1-2). Not linked from anywhere, not in sitemap.ts, noindex'd below.
@@ -36,7 +39,42 @@ const SPACING_SCALE = [
   { px: 96, tw: 'p-24 / gap-24' },
 ]
 
-export default function DevTokensPage() {
+const CARD_PREVIEW_SLUGS = [
+  'seasons-best-tea-boba', // no rating badge (reviewCount 0), has pills, no hours
+  'taichi-bubble-tea-ramen-and-poke-bowl-rogers-park', // very long name
+  'boba-bar-tea-house', // both pills (Delivery + Wheelchair accessible)
+  'august-32-tea', // no photo (generated tile), no hours
+  'teamo-tea-cafe', // real photo, real hours
+  'sharetea-seattle', // real photo, real hours, different city/timezone
+]
+
+const ARTICLE_PREVIEW_ITEMS = [
+  {
+    title: 'The Best Boba Shops Near Atlanta’s BeltLine',
+    slug: 'best-boba-atlanta-beltline',
+    excerpt: 'Six stops worth the detour if you’re walking the Eastside Trail, from a classic Taiwanese milk tea counter to a newer brown-sugar specialist.',
+    city: 'Atlanta',
+    readTimeMinutes: 6,
+  },
+  {
+    title: 'How to Order Boba Like a Regular',
+    slug: 'how-to-order-boba-like-a-regular',
+    excerpt: 'Sugar levels, ice levels, and the toppings worth paying extra for — a short guide for anyone who’s stood at the counter unsure what to say.',
+    readTimeMinutes: 4,
+  },
+  {
+    title: 'What Actually Makes Tapioca Pearls Chewy',
+    slug: 'what-makes-tapioca-pearls-chewy',
+    excerpt: 'The cassava starch, the boil time, and the syrup soak — and why a pearl that’s been sitting since morning never quite recovers.',
+    readTimeMinutes: 5,
+  },
+]
+
+export default async function DevTokensPage() {
+  const cardShops = (
+    await Promise.all(CARD_PREVIEW_SLUGS.map((slug) => getShopBySlug(slug)))
+  ).filter((s): s is NonNullable<typeof s> => s !== null)
+
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh' }} className="py-12">
       <div className="container-custom max-w-5xl space-y-16">
@@ -258,6 +296,39 @@ export default function DevTokensPage() {
           </p>
           <div className="w-48">
             <ShopTile id="teamo-tea-cafe" imageUrl="/images/boba-cat.jpeg" alt="Example real photo" />
+          </div>
+        </section>
+
+        {/* Shop card (Phase 3) */}
+        <section>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.75rem', marginBottom: '1rem' }}>
+            Shop card
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-muted)' }}>
+            6 real shops from Supabase: {CARD_PREVIEW_SLUGS.join(', ')}. Resize the window below 640px to see the
+            horizontal mobile layout. Tab through to check the focus ring and confirm the whole card is one click
+            target via the name link.
+          </p>
+          <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {cardShops.map((shop) => (
+              <ShopCard key={shop.id} shop={shop} />
+            ))}
+          </div>
+        </section>
+
+        {/* Article card (Phase 3 / §10 groundwork) */}
+        <section>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.75rem', marginBottom: '1rem' }}>
+            Article card (groundwork for §10 — not wired into any page)
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-muted)' }}>
+            Same media treatment and grid as the shop card, no pearl badge. 3 placeholder items — articles don&apos;t
+            exist yet. URL prefix decided: /guides/[slug].
+          </p>
+          <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {ARTICLE_PREVIEW_ITEMS.map((item) => (
+              <ArticleCard key={item.slug} {...item} />
+            ))}
           </div>
         </section>
 

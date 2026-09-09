@@ -13,6 +13,9 @@ interface ShopTileProps {
   imageUrl?: string | null
   alt: string
   className?: string
+  /** Overrides the default 4:3 aspect ratio - e.g. a square on the card's
+   * mobile horizontal layout. */
+  aspectClassName?: string
   sizes?: string
   priority?: boolean
 }
@@ -130,9 +133,9 @@ function GeneratedTile({ id }: { id: string }) {
   )
 }
 
-export default function ShopTile({ id, imageUrl, alt, className, sizes, priority }: ShopTileProps) {
+export default function ShopTile({ id, imageUrl, alt, className, aspectClassName, sizes, priority }: ShopTileProps) {
   return (
-    <div className={`relative aspect-[4/3] overflow-hidden rounded-media ${className ?? ''}`}>
+    <div className={`relative ${aspectClassName ?? 'aspect-[4/3]'} overflow-hidden rounded-media ${className ?? ''}`}>
       {imageUrl ? (
         <Image
           src={imageUrl}

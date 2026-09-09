@@ -276,7 +276,10 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* docs/UI-OVERHAUL-PLAN-09sep2026.md §4: auto-fill so the
+                  column count responds to space rather than a fixed
+                  breakpoint count. */}
+              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                 {paginatedShops.map((shop) => (
                   <ShopCard key={shop.id} shop={shop} />
                 ))}

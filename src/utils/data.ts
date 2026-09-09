@@ -297,6 +297,93 @@ export function parseOpeningHoursSpec(hours: string[]): Array<Record<string, str
   return specs
 }
 
+// The site groups shops by metro, not exact address (docs/AUDIT.md), so
+// "open now" is approximated with one timezone per metro rather than a
+// per-shop timezone lookup - accurate enough for the 7 metros covered.
+const CITY_TIMEZONES: Record<string, string> = {
+  Atlanta: 'America/New_York',
+  Chicago: 'America/Chicago',
+  Dallas: 'America/Chicago',
+  'New York': 'America/New_York',
+  Philadelphia: 'America/New_York',
+  Seattle: 'America/Los_Angeles',
+  Washington: 'America/New_York',
+}
+
+function parseClockToMinutes(raw: string): number | null {
+  const match = raw.trim().match(/^(\d{1,2}):?(\d{2})?\s*([AaPp][Mm])?$/)
+  if (!match) return null
+  let hour = parseInt(match[1], 10)
+  const minute = match[2] ? parseInt(match[2], 10) : 0
+  let meridiem = match[3]?.toUpperCase()
+
+  if (!meridiem) {
+    // Source data sometimes omits AM/PM on the opening time (e.g.
+    // "12-9PM"). A bare 12 is overwhelmingly a shop's noon opening, not
+    // midnight; any other bare hour in this dataset is a morning opening.
+    meridiem = hour === 12 ? 'PM' : 'AM'
+  }
+
+  if (meridiem === 'PM' && hour !== 12) hour += 12
+  if (meridiem === 'AM' && hour === 12) hour = 0
+  if (hour > 23) return null
+  return hour * 60 + minute
+}
+
+function formatMinutesAsClock(totalMinutes: number): string {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440
+  let hour = Math.floor(normalized / 60)
+  const minute = normalized % 60
+  const meridiem = hour >= 12 ? 'PM' : 'AM'
+  hour = hour % 12 || 12
+  return minute === 0 ? `${hour} ${meridiem}` : `${hour}:${minute.toString().padStart(2, '0')} ${meridiem}`
+}
+
+export interface OpenStatus {
+  isOpen: boolean
+  label: string
+}
+
+// Best-effort "open now" status for the shop card (docs/UI-OVERHAUL-PLAN-09sep2026.md
+// §4). Returns null whenever it can't be determined confidently (missing
+// hours, unrecognized city, unparseable time range) - the card omits the
+// status line entirely in that case rather than guessing.
+export function getOpenStatus(shop: Shop): OpenStatus | null {
+  if (!shop.working_hours || typeof shop.working_hours !== 'object') return null
+  const timeZone = CITY_TIMEZONES[shop.city]
+  if (!timeZone) return null
+
+  let dayName: string
+  let nowMinutes: number
+  try {
+    const now = new Date()
+    dayName = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long' }).format(now)
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now)
+    const h = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10)
+    const m = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10)
+    nowMinutes = h * 60 + m
+  } catch {
+    return null
+  }
+
+  const todayHours = (shop.working_hours as Record<string, string>)[dayName]
+  if (!todayHours) return null
+  if (/closed/i.test(todayHours)) return { isOpen: false, label: 'Closed today' }
+
+  const range = todayHours.split(/–|—|-/).map((s) => s.trim())
+  if (range.length !== 2) return null
+
+  const openMinutes = parseClockToMinutes(range[0])
+  let closeMinutes = parseClockToMinutes(range[1])
+  if (openMinutes === null || closeMinutes === null) return null
+  if (closeMinutes <= openMinutes) closeMinutes += 1440 // crosses midnight
+
+  if (nowMinutes >= openMinutes && nowMinutes < closeMinutes) {
+    return { isOpen: true, label: `closes ${formatMinutesAsClock(closeMinutes)}` }
+  }
+  return { isOpen: false, label: `opens ${formatMinutesAsClock(openMinutes)}` }
+}
+
 // Function to create a slug from a string
 export function createSlug(text: string): string {
   return text

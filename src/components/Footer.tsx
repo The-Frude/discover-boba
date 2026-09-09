@@ -98,12 +98,11 @@ export default async function Footer() {
             <a
               href="https://broadleafagency.com/"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow"
               className="hover:text-gray-300"
             >
               Broadleaf Agency
             </a>{' '}
-            in Woodstock, GA.
             {lastUpdated && (
               <>
                 {' '}

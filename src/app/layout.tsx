@@ -1,6 +1,6 @@
 import '@/styles/globals.css'
 import type { Metadata } from 'next'
-import { Inter, Poppins } from 'next/font/google'
+import { Inter, Poppins, Gabarito } from 'next/font/google'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
@@ -16,6 +16,17 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   variable: '--font-poppins',
+  display: 'swap',
+})
+
+// New heading font for the UI overhaul (docs/UI-OVERHAUL-PLAN-09sep2026.md
+// Phase 1). Loaded alongside Poppins, not replacing it - `--font-heading`
+// isn't consumed by `fontFamily.display` yet, so h1/h2/h3 keep rendering in
+// Poppins on every live page until a later phase repoints them.
+const gabarito = Gabarito({
+  weight: ['600', '700'],
+  subsets: ['latin'],
+  variable: '--font-heading',
   display: 'swap',
 })
 
@@ -49,7 +60,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${poppins.variable} font-sans`}>
+      <body className={`${inter.variable} ${poppins.variable} ${gabarito.variable} font-sans`}>
         <AuthProvider>
           <GoogleAnalytics />
           <Header />

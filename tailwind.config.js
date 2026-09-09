@@ -8,6 +8,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // UI overhaul tokens (docs/design-system.md) - additive, not yet
+        // consumed by any component. `primary`/`secondary` below are the
+        // pre-overhaul tokens and stay untouched until later phases migrate
+        // components off them.
+        bg: 'var(--bg)',
+        surface: 'var(--surface)',
+        ink: {
+          DEFAULT: 'var(--ink)',
+          muted: 'var(--ink-muted)',
+        },
+        matcha: {
+          DEFAULT: 'var(--matcha)',
+          deep: 'var(--matcha-deep)',
+        },
+        taro: {
+          DEFAULT: 'var(--taro)',
+          deep: 'var(--taro-deep)',
+        },
+        rule: 'var(--rule)',
+        'border-control': 'var(--border-control)',
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -38,6 +58,30 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-inter)'],
         display: ['var(--font-poppins)'],
+        // New heading font for the overhaul (Gabarito or its fallback chain
+        // - see docs/design-system.md for which one actually loaded).
+        // `display` above stays pointed at Poppins so no existing heading
+        // changes font until a later phase repoints it.
+        heading: ['var(--font-heading)'],
+      },
+      borderRadius: {
+        card: 'var(--r-card)',
+        media: 'var(--r-media)',
+        control: 'var(--r-control)',
+        pill: 'var(--r-pill)',
+      },
+      boxShadow: {
+        raised: 'var(--e-raised-shadow)',
+      },
+      // Named, not DEFAULT - `.btn-primary`/`.btn-secondary` currently use
+      // bare `transition-all` with no explicit duration/easing class, so
+      // they rely on Tailwind's own defaults. Overriding DEFAULT here would
+      // silently change their live hover-transition timing.
+      transitionDuration: {
+        motion: '160ms',
+      },
+      transitionTimingFunction: {
+        motion: 'ease-out',
       },
     },
   },

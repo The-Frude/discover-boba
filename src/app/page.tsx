@@ -70,24 +70,44 @@ export default async function Home() {
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={homeFaqJsonLd} />
 
-      {/* Hero */}
-      <section className="relative flex items-center justify-center py-20 md:py-32" style={{ background: HERO_GRADIENT }}>
-        <div className="container-custom relative z-10 text-center text-white">
+      {/* Hero - video background, with a CSS-gradient fallback layer
+          underneath for prefers-reduced-motion users (video is hidden via
+          motion-reduce:hidden rather than skipped entirely, so there's no
+          flash of missing content either way). */}
+      <section className="relative flex items-center justify-center py-20 md:py-32 overflow-hidden" style={{ background: HERO_GRADIENT }}>
+        <video
+          className="absolute inset-0 w-full h-full object-cover motion-reduce:hidden"
+          src="/videos/boba-shop-mall-compressed.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+        />
+        <div
+          className="relative z-10 mx-4 sm:mx-auto max-w-2xl text-center text-white rounded-card p-8 md:p-12"
+          style={{
+            background: 'rgba(20,32,46,0.32)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.18)',
+          }}
+        >
           <h1
             className="text-4xl md:text-6xl mb-4"
-            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '-0.02em' }}
+            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '-0.02em', textShadow: '0 2px 16px rgba(0,0,0,0.4)' }}
           >
-            Find the best boba in {cities.length} cities
+            Find the best boba in your city
           </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
-            {totalShops}+ shops, checked and rated
+          <p className="text-xl md:text-2xl mb-8" style={{ color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+            {totalShops}+ shops across {cities.length} cities, checked and rated
           </p>
 
           <form
             action="/search"
             method="get"
-            className="max-w-2xl mx-auto rounded-control p-2 shadow-lg"
-            style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}
+            className="rounded-control p-2 shadow-lg"
+            style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)' }}
           >
             <div className="flex flex-col sm:flex-row gap-2">
               <label htmlFor="home-hero-search" className="sr-only">
@@ -133,13 +153,12 @@ export default async function Home() {
                 className="group relative rounded-card overflow-hidden transition-colors duration-motion ease-motion hover:border-[var(--matcha-deep)] border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]"
                 style={{ background: 'var(--surface)', borderColor: 'var(--rule)' }}
               >
-                {/* Generated tile, not a stock photo - city cards are part
-                    of the same tile system as shop cards, not a separate
-                    photo gallery. */}
+                {/* Real city photo - ShopTile still supplies the generated
+                    fallback tile automatically for any city without one. */}
                 <ShopTile
                   id={city.slug}
-                  imageUrl={null}
-                  alt=""
+                  imageUrl={city.image}
+                  alt={`${city.name} skyline`}
                   aspectClassName="aspect-[16/9]"
                   className="transition-transform duration-motion ease-motion group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:transform-none"
                 />

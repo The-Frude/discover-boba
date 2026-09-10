@@ -155,21 +155,18 @@ function QuickFields({
   )
 }
 
+// Always non-auto-submitting: both the desktop modal and the mobile sheet
+// now batch every checkbox change and only apply on "Apply filters" or a
+// click outside the panel (see useFilterPanel below) - never per-checkbox.
 function AttributeCheckboxGroups({
   idPrefix,
   attributeGroups,
   selectedTagKeys,
-  autoSubmit,
 }: {
   idPrefix: string
   attributeGroups: AttributeGroup[]
   selectedTagKeys: string[]
-  autoSubmit: boolean
 }) {
-  const submitOnChange = autoSubmit
-    ? (e: React.ChangeEvent<HTMLInputElement>) => e.currentTarget.form?.requestSubmit()
-    : undefined
-
   if (attributeGroups.length === 0) return null
 
   return (
@@ -185,23 +182,13 @@ function AttributeCheckboxGroups({
               const checked = selectedTagKeys.includes(item.key)
               return (
                 <label key={item.key} htmlFor={id} className="cursor-pointer">
-                  <input
-                    id={id}
-                    type="checkbox"
-                    name="tags"
-                    value={item.key}
-                    defaultChecked={checked}
-                    onChange={submitOnChange}
-                    className="peer sr-only"
-                  />
+                  <input id={id} type="checkbox" name="tags" value={item.key} defaultChecked={checked} className="peer sr-only" />
                   {/* peer-checked reacts to the checkbox's live DOM state via
                       pure CSS, not a value computed at server-render time -
                       an uncontrolled checkbox's visual toggle would otherwise
-                      lag a full page reload behind the actual click,
-                      especially in the mobile sheet where submit is a
-                      separate, later step. */}
+                      lag a full page reload behind the actual click. */}
                   <span
-                    className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-pill border transition-colors duration-motion ease-motion bg-[var(--bg)] border-[var(--rule)] text-[var(--ink)] peer-checked:bg-[var(--matcha-deep)] peer-checked:border-[var(--matcha-deep)] peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--taro-deep)]`}
+                    className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-pill border transition-colors duration-motion ease-motion bg-[var(--bg)] border-[var(--rule)] text-[var(--ink)] peer-checked:bg-[var(--matcha-deep)] peer-checked:border-[var(--matcha-deep)] peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--taro-deep)]"
                   >
                     {item.label}
                   </span>
@@ -237,31 +224,55 @@ function ActiveChips({ chips, clearAllHref }: { chips: ActiveFilterChip[]; clear
   )
 }
 
-// Shared focus-trap / Escape-to-close behavior for a <details> used as a
-// sheet or dropdown. Works with plain <details> semantics with no JS at
-// all (click the summary to open/close); this only adds the a11y layer on
-// top once JS is available.
-function useDisclosureA11y() {
+// Drives a <details> used as a batching filter panel (mobile bottom sheet
+// or desktop centered modal). Native <details> semantics are the no-JS
+// baseline - clicking <summary> opens/closes it with zero script. On top
+// of that:
+//  - Opening pushes a same-URL history entry, so the physical back button
+//    just closes the panel (a "cancel") instead of leaving the page.
+//  - Escape and the back button both cancel: the form resets to whatever
+//    was actually applied before the panel opened, discarding any
+//    unsubmitted checkbox changes, then closes.
+//  - Clicking the backdrop (outside the panel content) submits the form
+//    as-is - the one "apply by dismissing" path the plan calls for.
+//  - The "Apply filters" button is a plain type="submit" with no JS
+//    involved at all, so it still works with JS disabled; it just doesn't
+//    get the history-cleanup applyAndClose() below gives the other paths.
+//  - Closing for any reason other than a real navigation resets the form
+//    to its last-applied state, so reopening never shows stale, never-
+//    applied checkbox state from a previous cancelled attempt.
+function useFilterPanel(formRef: React.RefObject<HTMLFormElement>) {
   const detailsRef = useRef<HTMLDetailsElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const triggerRef = useRef<HTMLElement>(null)
+  const pushedRef = useRef(false)
 
   useEffect(() => {
     const details = detailsRef.current
-    const panel = panelRef.current
-    if (!details || !panel) return
+    if (!details) return
 
     function focusables(): HTMLElement[] {
-      if (!panel) return []
+      if (!panelRef.current) return []
       return Array.from(
-        panel.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+        panelRef.current.querySelectorAll<HTMLElement>(
+          'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
       )
+    }
+
+    function cancelAndClose() {
+      formRef.current?.reset()
+      details!.open = false
     }
 
     function onKeyDown(e: KeyboardEvent) {
       if (!details!.open) return
       if (e.key === 'Escape') {
-        details!.open = false
+        cancelAndClose()
+        if (pushedRef.current) {
+          pushedRef.current = false
+          history.back()
+        }
         triggerRef.current?.focus()
         return
       }
@@ -282,41 +293,66 @@ function useDisclosureA11y() {
 
     function onToggle() {
       if (details!.open) {
+        if (!pushedRef.current) {
+          history.pushState({ filterPanelOpen: true }, '')
+          pushedRef.current = true
+        }
         focusables()[0]?.focus()
+      } else {
+        // Closed via the summary being clicked again, or programmatically
+        // by cancelAndClose()/onPopState below - either way, that's every
+        // close path except a real form submission (which navigates away
+        // and makes this moot), so resetting here is always correct.
+        formRef.current?.reset()
+      }
+    }
+
+    function onPopState() {
+      if (details!.open) {
+        // The entry we pushed is already gone (that's what just fired this
+        // event) - don't call history.back() again, just reflect the close.
+        pushedRef.current = false
+        details!.open = false
       }
     }
 
     details.addEventListener('toggle', onToggle)
     document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('popstate', onPopState)
     return () => {
       details.removeEventListener('toggle', onToggle)
       document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('popstate', onPopState)
     }
-  }, [])
+  }, [formRef])
 
-  return { detailsRef, panelRef, triggerRef }
+  const applyFromBackdrop = () => formRef.current?.requestSubmit()
+
+  return { detailsRef, panelRef, triggerRef, applyFromBackdrop }
 }
 
 export default function CityFilterBar(props: CityFilterBarProps) {
   const { citySlug, cityName, resultCount, totalCount, activeChips, clearAllHref, attributeGroups, selectedTagKeys } = props
-  const mobile = useDisclosureA11y()
-  const desktopMore = useDisclosureA11y()
+  const mobileFormRef = useRef<HTMLFormElement>(null)
+  const desktopFormRef = useRef<HTMLFormElement>(null)
+  const mobile = useFilterPanel(mobileFormRef)
+  const desktop = useFilterPanel(desktopFormRef)
 
   const activeCount = activeChips.length
   const moreFiltersCount = attributeGroups.reduce((sum, g) => sum + g.items.length, 0)
 
-  // The mobile sheet is a full-screen overlay, so it also gets a body
-  // scroll lock while open - the desktop "more filters" dropdown doesn't
-  // need that, it's inline.
+  // Both overlays are full-screen, so lock body scroll while either is open.
   useEffect(() => {
-    const details = mobile.detailsRef.current
-    if (!details) return
-    function onToggle() {
-      document.body.style.overflow = details!.open ? 'hidden' : ''
+    const detailsEls = [mobile.detailsRef.current, desktop.detailsRef.current].filter(
+      (el): el is HTMLDetailsElement => el !== null
+    )
+    if (detailsEls.length === 0) return
+    function updateScrollLock() {
+      document.body.style.overflow = detailsEls.some((el) => el.open) ? 'hidden' : ''
     }
-    details.addEventListener('toggle', onToggle)
+    detailsEls.forEach((el) => el.addEventListener('toggle', updateScrollLock))
     return () => {
-      details.removeEventListener('toggle', onToggle)
+      detailsEls.forEach((el) => el.removeEventListener('toggle', updateScrollLock))
       document.body.style.overflow = ''
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -333,9 +369,11 @@ export default function CityFilterBar(props: CityFilterBarProps) {
         {liveRegionText}
       </div>
 
-      {/* Desktop: compact bar with a "More filters" dropdown for the
-          grouped, per-city attribute list. */}
+      {/* Desktop: compact bar with a "More filters" button that opens a
+          centered modal (not a corner dropdown) for the grouped, per-city
+          attribute checkboxes. */}
       <form
+        ref={desktopFormRef}
         action={`/find-boba-shops/${citySlug}`}
         method="GET"
         className="hidden md:flex flex-col gap-3 p-4 rounded-card mb-3"
@@ -344,25 +382,45 @@ export default function CityFilterBar(props: CityFilterBarProps) {
         <div className="flex flex-wrap items-center gap-4">
           <QuickFields idPrefix="desktop" {...props} autoSubmit />
           {moreFiltersCount > 0 && (
-            <details ref={desktopMore.detailsRef} className="relative">
+            <details ref={desktop.detailsRef}>
               <summary
-                ref={desktopMore.triggerRef}
+                ref={desktop.triggerRef}
                 className={`list-none [&::-webkit-details-marker]:hidden cursor-pointer inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-control ${focusRingClass}`}
                 style={{ border: '1px solid var(--rule)', color: 'var(--ink)' }}
               >
                 More filters{selectedTagKeys.length > 0 ? ` (${selectedTagKeys.length})` : ''}
               </summary>
+              {/* Centered modal, not anchored to the button - a fixed
+                  full-screen backdrop with the panel itself centered via
+                  flex. Clicking the backdrop (not the panel) applies. */}
               <div
-                ref={desktopMore.panelRef}
-                className="absolute left-0 top-full mt-2 z-40 w-[min(640px,90vw)] p-4 rounded-card shadow-lg max-h-[70vh] overflow-y-auto"
-                style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                style={{ background: 'rgba(30,41,59,0.4)' }}
+                onClick={desktop.applyFromBackdrop}
               >
-                <AttributeCheckboxGroups
-                  idPrefix="desktop"
-                  attributeGroups={attributeGroups}
-                  selectedTagKeys={selectedTagKeys}
-                  autoSubmit
-                />
+                <div
+                  ref={desktop.panelRef}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-lg rounded-card shadow-lg max-h-[80vh] overflow-y-auto p-6"
+                  style={{ background: 'var(--surface)' }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--ink)' }}>
+                      More filters
+                    </h2>
+                    <Link href={clearAllHref} className="text-sm underline" style={{ color: 'var(--ink-muted)' }}>
+                      Clear all
+                    </Link>
+                  </div>
+                  <AttributeCheckboxGroups idPrefix="desktop" attributeGroups={attributeGroups} selectedTagKeys={selectedTagKeys} />
+                  <button
+                    type="submit"
+                    className={`mt-5 w-full text-sm font-semibold px-4 py-3 rounded-control text-white ${focusRingClass}`}
+                    style={{ background: 'var(--matcha-deep)' }}
+                  >
+                    Apply filters
+                  </button>
+                </div>
               </div>
             </details>
           )}
@@ -381,8 +439,8 @@ export default function CityFilterBar(props: CityFilterBarProps) {
 
       {/* Mobile: search stays visible; everything else (including the
           attribute groups) is behind a native <details> disclosure so it
-          opens/closes without JS. JS only adds the focus trap and
-          Escape-to-close on top. */}
+          opens/closes without JS. JS adds the focus trap, Escape/back-
+          button cancel, and backdrop-click-applies on top. */}
       <div className="md:hidden flex flex-col gap-3">
         <form action={`/find-boba-shops/${citySlug}`} method="GET" className="flex gap-2">
           <label htmlFor="mobile-search-only-q" className="sr-only">
@@ -417,15 +475,21 @@ export default function CityFilterBar(props: CityFilterBarProps) {
             Filters{activeCount > 0 ? ` (${activeCount})` : ''}
           </summary>
           {/* Positioned fixed only once open (details hides this natively
-              when closed), so it behaves like a bottom sheet on mobile. */}
+              when closed), so it behaves like a bottom sheet on mobile.
+              Clicking the backdrop (not the sheet) applies. */}
           <div
-            ref={mobile.panelRef}
             className="fixed inset-0 z-[60] flex flex-col justify-end"
             style={{ background: 'rgba(30,41,59,0.4)' }}
+            onClick={mobile.applyFromBackdrop}
           >
             <form
+              ref={(el) => {
+                mobileFormRef.current = el
+                mobile.panelRef.current = el
+              }}
               action={`/find-boba-shops/${citySlug}`}
               method="GET"
+              onClick={(e) => e.stopPropagation()}
               className="flex flex-col gap-4 p-5 rounded-t-card max-h-[85vh] overflow-y-auto"
               style={{ background: 'var(--surface)' }}
             >
@@ -438,12 +502,7 @@ export default function CityFilterBar(props: CityFilterBarProps) {
                 </Link>
               </div>
               <QuickFields idPrefix="mobile" {...props} autoSubmit={false} />
-              <AttributeCheckboxGroups
-                idPrefix="mobile"
-                attributeGroups={attributeGroups}
-                selectedTagKeys={selectedTagKeys}
-                autoSubmit={false}
-              />
+              <AttributeCheckboxGroups idPrefix="mobile" attributeGroups={attributeGroups} selectedTagKeys={selectedTagKeys} />
               <button
                 type="submit"
                 className={`text-sm font-semibold px-4 py-3 rounded-control text-white ${focusRingClass}`}

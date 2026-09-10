@@ -563,22 +563,26 @@ export async function getCities(): Promise<City[]> {
       }
     }
     
+    // Match city images by reading the real directory listing and comparing
+    // case-insensitively, rather than guessing extensions with
+    // fs.existsSync() - existsSync is case-INSENSITIVE on Windows/default
+    // macOS, so a guess like "Chicago.jpg" reports true even when the real
+    // file is "Chicago.JPG", and the constructed lowercase URL then 404s
+    // against Vercel's case-sensitive Linux filesystem in production.
+    // Reading the directory once and matching against real filenames is
+    // correct on every OS.
+    const imagesDir = path.join(process.cwd(), 'public', 'images');
+    const imageFiles = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : [];
+
     // Create city objects
     for (const [cityName, data] of cityMap.entries()) {
-      // Check for city image
-      let imagePath = `/images/${cityName}.jpg`; // Default path
-      if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.jpg`))) {
-        imagePath = `/images/${cityName}.jpg`;
-      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.JPG`))) {
-        imagePath = `/images/${cityName}.JPG`;
-      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.jpeg`))) {
-        imagePath = `/images/${cityName}.jpeg`;
-      } else if (fs.existsSync(path.join(process.cwd(), 'public', 'images', `${cityName}.PNG`))) {
-        imagePath = `/images/${cityName}.PNG`;
-      } else {
-        imagePath = `/images/boba-cat.jpeg`; // Fallback image
-      }
-      
+      const match = imageFiles.find((file) => {
+        const ext = path.extname(file).toLowerCase();
+        const base = path.basename(file, path.extname(file));
+        return base.toLowerCase() === cityName.toLowerCase() && ['.jpg', '.jpeg', '.png'].includes(ext);
+      });
+      const imagePath = match ? `/images/${match}` : `/images/boba-cat.jpeg`;
+
       cities.push({
         name: cityName,
         slug: createSlug(cityName),

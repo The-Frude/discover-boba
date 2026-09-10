@@ -61,8 +61,8 @@ export default async function FindShopsPage() {
               >
                 <ShopTile
                   id={city.slug}
-                  imageUrl={null}
-                  alt=""
+                  imageUrl={city.image}
+                  alt={`${city.name} skyline`}
                   aspectClassName="aspect-[16/9]"
                   className="transition-transform duration-motion ease-motion group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:transform-none"
                 />

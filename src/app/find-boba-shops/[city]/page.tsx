@@ -12,6 +12,7 @@ import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import MapErrorFallback from '@/components/MapErrorFallback'
+import CityIntroText from '@/components/CityIntroText'
 import { CITY_INTROS } from './city-intros'
 
 // Filters are curated per city, not a fixed list: FILTER_ATTRIBUTES in
@@ -322,28 +323,35 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       {/* Shop Listings */}
       <section className="py-12" style={{ background: 'var(--bg)' }}>
         <div className="container-custom">
-          {CITY_INTROS[city.slug] && (
-            <p className="max-w-4xl mb-10 leading-relaxed" style={{ color: 'var(--ink-muted)' }}>
-              {CITY_INTROS[city.slug]}
-            </p>
-          )}
+          {/* Mobile: search/filters come first (order-1), intro second
+              (order-2). Desktop resets to source order via md:order-none,
+              which is intro-then-filters, matching the JSX below. */}
+          <div className="flex flex-col">
+            {CITY_INTROS[city.slug] && (
+              <div className="order-2 md:order-none">
+                <CityIntroText citySlug={city.slug} text={CITY_INTROS[city.slug]} />
+              </div>
+            )}
 
-          <CityFilterBar
-            citySlug={city.slug}
-            cityName={city.name}
-            q={q}
-            sort={sort}
-            minRating={minRatingParam}
-            selectedTagKeys={selectedTagKeys}
-            attributeGroups={attributeGroups}
-            social={wantsSocial}
-            open={wantsOpenNow}
-            showSocialFilter={showSocialFilter}
-            resultCount={filteredShops.length}
-            totalCount={allShops.length}
-            activeChips={activeChips}
-            clearAllHref={clearAllHref}
-          />
+            <div className="order-1 md:order-none">
+              <CityFilterBar
+                citySlug={city.slug}
+                cityName={city.name}
+                q={q}
+                sort={sort}
+                minRating={minRatingParam}
+                selectedTagKeys={selectedTagKeys}
+                attributeGroups={attributeGroups}
+                social={wantsSocial}
+                open={wantsOpenNow}
+                showSocialFilter={showSocialFilter}
+                resultCount={filteredShops.length}
+                totalCount={allShops.length}
+                activeChips={activeChips}
+                clearAllHref={clearAllHref}
+              />
+            </div>
+          </div>
 
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
             <h2 className="text-2xl" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--ink)' }}>

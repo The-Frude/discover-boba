@@ -1,0 +1,42 @@
+name: Monthly Shop Data Refresh
+
+# Refreshes rating/review-count/business-status for every shop from Google
+# Places API (New), writing straight to the live columns (no staging/review
+# step - see scripts/monthly-refresh-shop-data.mjs for why that's safe for
+# a recurring job). Does NOT touch photos; that's a separate, manually-run
+# backfill (scripts/backfill-missing-photos.mjs).
+#
+# Requires two repo secrets not already used by ci-cd.yml:
+#   DATABASE_URL          - direct Postgres connection string (Supabase)
+#   GOOGLE_PLACES_API_KEY - same key used for the one-time refreshes
+# Add both under Settings > Secrets and variables > Actions before the
+# first scheduled run, or `workflow_dispatch` will fail the same way.
+
+on:
+  schedule:
+    # 1st of every month, 06:00 UTC. GitHub schedules run on a best-effort
+    # basis and can be delayed under load - don't rely on the exact hour.
+    - cron: '0 6 1 * *'
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh shop data
+        run: node scripts/monthly-refresh-shop-data.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}

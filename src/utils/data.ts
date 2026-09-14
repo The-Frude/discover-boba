@@ -44,6 +44,7 @@ export interface Shop {
   featured_order_url?: string;
   owner_id?: string;
   updated_at?: string;
+  google_business_status?: string;
 }
 
 // Tags applied to every shop by extractTags() regardless of its actual
@@ -517,6 +518,15 @@ export function getOpenStatus(shop: Shop): OpenStatus | null {
   return { isOpen: false, label: `opens ${formatMinutesAsClock(openMinutes)}` }
 }
 
+// Single source of truth for "is this shop permanently closed", per Google.
+// Shops in this state are excluded from every listing (getShopsByCity,
+// getCities' shop counts) but the shop's own page still renders - callers
+// that render the page itself (not a listing) use this to show a notice
+// rather than pretending the shop is still open for business.
+export function isPermanentlyClosed(shop: Shop): boolean {
+  return shop.google_business_status === 'CLOSED_PERMANENTLY'
+}
+
 // Function to create a slug from a string
 export function createSlug(text: string): string {
   return text
@@ -540,20 +550,25 @@ export async function getCities(): Promise<City[]> {
     // Get all unique cities from the shops table
     const { data: cityData, error } = await supabase
       .from('shops')
-      .select('city, state')
+      .select('city, state, google_business_status')
       .order('city');
-      
+
     if (error) {
       console.error('Error fetching cities:', error);
       return [];
     }
-    
+
     // Count shops per city and create city objects
     const cities: City[] = [];
     const cityMap = new Map<string, { count: number, state: string }>();
-    
-    // Group by city and count shops
-    for (const shop of cityData) {
+
+    // Group by city and count shops - excluding permanently-closed ones,
+    // same policy as getShopsByCity, so a city's advertised count matches
+    // what's actually listed. Filtered in JS, not via a `.neq()` on the
+    // query: NULL google_business_status (shops never successfully
+    // refreshed) must still count as visible, and SQL's `<> 'X'` silently
+    // excludes NULLs rather than keeping them.
+    for (const shop of cityData.filter((s) => s.google_business_status !== 'CLOSED_PERMANENTLY')) {
       const cityName = shop.city;
       if (!cityMap.has(cityName)) {
         cityMap.set(cityName, { count: 1, state: shop.state });
@@ -637,12 +652,16 @@ export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promi
       return [];
     }
 
-    // Group listings so the best-presented shops show first: a real
-    // Google description plus a working photo, then just a working
-    // photo, then everything else. Array.sort is stable, so within each
-    // premium/tier bucket the existing rating/name/reviews order (already
-    // applied by the query above) is left exactly as-is.
-    const shops = [...(data || [])];
+    // Permanently-closed shops are excluded from every listing (city
+    // pages, search, nearby-shops) - a query-time filter, not a delete, so
+    // it's fully reversible if Google's status is ever wrong and applies
+    // automatically the moment a status flips (no separate "removal" step
+    // needed beyond the existing monthly refresh writing the status).
+    // The shop's own page still renders - see isPermanentlyClosed() below.
+    // Filtered in JS: shops that were never successfully refreshed have a
+    // NULL google_business_status and must stay visible, which a `.neq()`
+    // on the query would silently break (SQL's `<> 'X'` excludes NULLs).
+    const shops = (data || []).filter((shop) => shop.google_business_status !== 'CLOSED_PERMANENTLY');
     shops.sort((a, b) => {
       const premiumDiff = (b.is_premium ? 1 : 0) - (a.is_premium ? 1 : 0);
       if (premiumDiff !== 0) return premiumDiff;

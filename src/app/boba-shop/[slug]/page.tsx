@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, parseOpeningHoursSpec, GENERIC_TAGS } from '@/utils/data'
+import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, isPermanentlyClosed, parseOpeningHoursSpec, GENERIC_TAGS } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
 import ShopCard from '@/components/ShopCard'
 import ReviewsSection from '@/components/ReviewsSection'
@@ -292,6 +292,24 @@ export default async function ShopPage({ params }: ShopPageProps) {
             ]}
           />
         </div>
+
+        {/* Permanently-closed notice - the shop is excluded from every
+            listing/search/sitemap (see isPermanentlyClosed() in
+            utils/data.ts), but this page stays reachable directly rather
+            than 404ing, so anyone who bookmarked it or finds it via an
+            old search result sees this instead of a stale "open for
+            business" page. */}
+        {isPermanentlyClosed(shop) && (
+          <div
+            className="mb-5 rounded-card px-4 py-3 flex items-center gap-2 font-semibold"
+            style={{ background: '#FEE2E2', color: '#991B1B', border: '1px solid #FCA5A5' }}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.6c.75 1.334-.213 2.987-1.743 2.987H3.482c-1.53 0-2.493-1.653-1.743-2.987l6.518-11.6zM11 14a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            Permanently closed, according to Google
+          </div>
+        )}
 
         {/* Header block - no hero image unless a real photo exists; a
             hero-scale generated tile would read as a placeholder. */}

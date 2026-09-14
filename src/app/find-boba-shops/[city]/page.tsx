@@ -106,19 +106,19 @@ interface CityPageProps {
   }
 }
 
-export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: CityPageProps): Promise<Metadata> {
   const paramsData = await Promise.resolve(params)
   const { city: citySlug } = paramsData
   const cities = await getCities()
   const city = cities.find(c => c.slug === citySlug)
-  
+
   if (!city) {
     return {
       title: 'City Not Found',
       description: 'The requested city could not be found.',
     }
   }
-  
+
   const seo = CITY_SEO[city.slug]
   const title = seo
     ? seo.title(city.shopCount)
@@ -126,6 +126,21 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   const description = seo
     ? seo.description(city.shopCount)
     : `Find the top-rated bubble tea shops in ${city.name}, ${city.state}. Browse reviews, ratings, and details for the best boba experience.`
+
+  // Any filter/sort/search/pagination param means this is a non-canonical
+  // view of the same content (docs/discoverboba-seo-audit-plan-14sep2026.md
+  // Priority 3) - the canonical tag alone is a hint Google can ignore, so
+  // this also explicitly asks it not to index the variant, while still
+  // following its links (real crawlable <a href>s to shops/pagination) so
+  // link equity flows through. A self-referencing canonical per pagination
+  // page was considered and rejected: every shop already has its own
+  // independently-indexable page, so there's no real content loss in
+  // steering all crawl/index weight at the one clean city URL instead of
+  // maintaining N thin paginated shells as separate indexable entities.
+  const searchParamsData = await Promise.resolve(searchParams)
+  const hasNonDefaultParams = Object.values(searchParamsData || {}).some((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value)
+  )
 
   return {
     title,
@@ -136,6 +151,7 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
       // query params, so filtered views aren't treated as duplicate pages.
       canonical: `/find-boba-shops/${city.slug}`,
     },
+    ...(hasNonDefaultParams ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,

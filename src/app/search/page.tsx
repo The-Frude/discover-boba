@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   title: 'Search Boba Tea Shops | Discover Boba',
   description: 'Search for boba tea shops across major cities in the United States.',
   keywords: 'boba, bubble tea, search, find boba shops, boba near me',
+  // Every real render of this route is a query-specific result set (a bare
+  // /search redirects to the homepage - see below), so there's no
+  // canonical "search page" worth indexing, just an unbounded set of
+  // near-duplicate views over content that already has its own indexable
+  // pages (docs/discoverboba-seo-audit-plan-14sep2026.md Priority 3).
+  // follow: true so links out to shop pages still pass crawl signal.
+  robots: { index: false, follow: true },
 }
 
 async function searchShops(query: string): Promise<Shop[]> {

@@ -166,13 +166,18 @@ async function main() {
     fixed++;
 
     if (!DRY_RUN) {
+      // `photos` is jsonb, not a Postgres array - pass a JSON string and
+      // cast explicitly (caught in testing: an earlier version used
+      // ARRAY[$1::text], which Postgres rejects outright for a jsonb
+      // column - a clean failure with no partial writes, not silent data
+      // corruption, but wrong nonetheless).
       await client.query(
         `UPDATE shops
-         SET photos = ARRAY[$1::text],
+         SET photos = $1::jsonb,
              has_working_photo = true,
              photo_checked_at = now()
          WHERE id = $2`,
-        [uriResult.photoUri, shop.id]
+        [JSON.stringify([uriResult.photoUri]), shop.id]
       );
     }
   }

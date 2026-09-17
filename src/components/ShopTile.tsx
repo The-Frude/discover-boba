@@ -142,6 +142,10 @@ export default function ShopTile({ id, imageUrl, alt, className, aspectClassName
           alt={alt}
           fill
           priority={priority}
+          // Local files (city photos under /public/images) don't need
+          // Vercel's paid optimizer - they're already a fixed, pre-sized
+          // set. Only remote (Google Photos) shop images go through it.
+          unoptimized={imageUrl.startsWith('/')}
           sizes={sizes ?? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
           className="object-cover"
         />

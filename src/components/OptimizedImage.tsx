@@ -60,7 +60,9 @@ export default function OptimizedImage({
     // Combine the transition class with the passed className
     className: `transition-opacity duration-500 ${className || ''} object-cover`,
     onLoad: () => setIsLoading(false),
-    unoptimized: false,
+    // Local files (under /public) are a fixed, pre-sized set and don't
+    // need Vercel's paid optimizer - only remote sources do.
+    unoptimized: imageSrc.startsWith('/'),
     quality: 85,
     ...props, // Spread remaining props first
   }

@@ -48,12 +48,19 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'discoverboba.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'streetviewpixels-pa.googleapis.com',
       }
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    // Shop/city photos only change via infrequent backfill runs, not
+    // per-request - a long TTL means repeat visits are served from
+    // Vercel's cache instead of burning a new billed transformation.
+    minimumCacheTTL: 2592000, // 30 days
     unoptimized: false,
   },
   

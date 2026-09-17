@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getCities, getShopsByCity } from '@/utils/data'
+import { getCities, getShopsByCity, getBoroughCounts, createSlug, MIN_BOROUGH_SHOP_COUNT } from '@/utils/data'
 
 // Without this, Next.js treats sitemap() as fully static and generates it
 // once at build time - new/removed shops never show up in sitemap.xml
@@ -71,6 +71,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
   
+  // NYC borough pages (SEO audit Priority 5, phase 1) - only boroughs
+  // clearing MIN_BOROUGH_SHOP_COUNT are indexable, so only those belong in
+  // the sitemap; a noindexed borough page (currently Queens/Brooklyn/Bronx/
+  // Staten Island) is intentionally left out, same policy as noindexed
+  // filtered city-page URLs never appearing here either.
+  const nyc = cities.find((city) => city.slug === 'new-york')
+  const boroughCounts = nyc ? await getBoroughCounts(nyc.name) : []
+  const boroughRoutes = boroughCounts
+    .filter((b) => b.count >= MIN_BOROUGH_SHOP_COUNT)
+    .map((b) => ({
+      url: `${baseUrl}/find-boba-shops/new-york/${createSlug(b.borough)}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
+    }))
+
   // Get all shops for each city
   const shopRoutes = []
   
@@ -87,5 +103,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     shopRoutes.push(...cityShopRoutes)
   }
   
-  return [...routes, ...cityRoutes, ...shopRoutes]
+  return [...routes, ...cityRoutes, ...boroughRoutes, ...shopRoutes]
 }

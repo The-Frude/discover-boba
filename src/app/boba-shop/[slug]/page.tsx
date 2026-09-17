@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, isPermanentlyClosed, parseOpeningHoursSpec, GENERIC_TAGS } from '@/utils/data'
+import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, isPermanentlyClosed, parseOpeningHoursSpec, GENERIC_TAGS, createSlug } from '@/utils/data'
 import OptimizedImage from '@/components/OptimizedImage'
 import ShopCard from '@/components/ShopCard'
 import ReviewsSection from '@/components/ReviewsSection'
@@ -199,6 +199,15 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const breadcrumbCityName = removeTrailingComma(mainCity.name);
   const breadcrumbCityPath = removeTrailingComma(mainCity.path);
 
+  // NYC borough pages (SEO audit Priority 5, phase 1) - adds a 4th
+  // breadcrumb level only for shops with a real `borough` value (backfilled
+  // for New York only, see scripts/backfill-nyc-boroughs.mjs). Every other
+  // city's shops have no `borough`, so `breadcrumbBorough` is undefined and
+  // this whole block is inert for them - same 3-level output as before.
+  const breadcrumbBorough = shop.borough
+    ? { name: shop.borough, path: `${breadcrumbCityPath}/${createSlug(shop.borough)}` }
+    : null
+
   const shopUrl = `${SITE_URL}/boba-shop/${shop.slug}`
 
   const breadcrumbJsonLd = {
@@ -207,7 +216,10 @@ export default async function ShopPage({ params }: ShopPageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: breadcrumbCityName, item: `${SITE_URL}/find-boba-shops/${breadcrumbCityPath}` },
-      { '@type': 'ListItem', position: 3, name: shop.name, item: shopUrl },
+      ...(breadcrumbBorough
+        ? [{ '@type': 'ListItem', position: 3, name: breadcrumbBorough.name, item: `${SITE_URL}/find-boba-shops/${breadcrumbBorough.path}` }]
+        : []),
+      { '@type': 'ListItem', position: breadcrumbBorough ? 4 : 3, name: shop.name, item: shopUrl },
     ],
   }
 
@@ -288,6 +300,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
             items={[
               { name: 'Home', href: '/' },
               { name: breadcrumbCityName, href: `/find-boba-shops/${breadcrumbCityPath}` },
+              ...(breadcrumbBorough ? [{ name: breadcrumbBorough.name, href: `/find-boba-shops/${breadcrumbBorough.path}` }] : []),
               { name: shop.name },
             ]}
           />

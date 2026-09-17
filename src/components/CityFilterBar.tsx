@@ -11,6 +11,10 @@ export interface ActiveFilterChip {
 
 export interface CityFilterBarProps {
   citySlug: string
+  /** Defaults to `/find-boba-shops/${citySlug}` - override for a nested
+   * route (e.g. a borough page) whose filter forms must post back to the
+   * nested URL, not the parent city page. */
+  basePath?: string
   cityName: string
   q: string
   sort: string
@@ -333,6 +337,7 @@ function useFilterPanel(formRef: React.RefObject<HTMLFormElement>) {
 
 export default function CityFilterBar(props: CityFilterBarProps) {
   const { citySlug, cityName, resultCount, totalCount, activeChips, clearAllHref, attributeGroups, selectedTagKeys } = props
+  const basePath = props.basePath || `/find-boba-shops/${citySlug}`
   const mobileFormRef = useRef<HTMLFormElement>(null)
   const desktopFormRef = useRef<HTMLFormElement>(null)
   const mobile = useFilterPanel(mobileFormRef)
@@ -374,7 +379,7 @@ export default function CityFilterBar(props: CityFilterBarProps) {
           attribute checkboxes. */}
       <form
         ref={desktopFormRef}
-        action={`/find-boba-shops/${citySlug}`}
+        action={basePath}
         method="GET"
         className="hidden md:flex flex-col gap-3 p-4 rounded-card mb-3"
         style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}
@@ -442,7 +447,7 @@ export default function CityFilterBar(props: CityFilterBarProps) {
           opens/closes without JS. JS adds the focus trap, Escape/back-
           button cancel, and backdrop-click-applies on top. */}
       <div className="md:hidden flex flex-col gap-3">
-        <form action={`/find-boba-shops/${citySlug}`} method="GET" className="flex gap-2">
+        <form action={basePath} method="GET" className="flex gap-2">
           <label htmlFor="mobile-search-only-q" className="sr-only">
             Search within results
           </label>
@@ -487,7 +492,7 @@ export default function CityFilterBar(props: CityFilterBarProps) {
                 mobileFormRef.current = el
                 mobile.panelRef.current = el
               }}
-              action={`/find-boba-shops/${citySlug}`}
+              action={basePath}
               method="GET"
               onClick={(e) => e.stopPropagation()}
               className="flex flex-col gap-4 p-5 rounded-t-card max-h-[85vh] overflow-y-auto"

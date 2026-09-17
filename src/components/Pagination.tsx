@@ -9,6 +9,9 @@ interface PaginationProps {
   itemsPerPage: number
   currentPage: number
   citySlug: string
+  /** Defaults to `/find-boba-shops/${citySlug}` - override for a nested
+   * route (e.g. a borough page) so page links stay on the nested URL. */
+  basePath?: string
   sort?: string
   minRating?: string
   tags?: string[]
@@ -22,6 +25,7 @@ function PaginationContent({
   itemsPerPage,
   currentPage,
   citySlug,
+  basePath,
   sort,
   minRating,
   tags = [],
@@ -80,7 +84,7 @@ function PaginationContent({
     if (social) params.set('social', '1')
     if (open) params.set('open', 'now')
     if (q) params.set('q', q)
-    return `/find-boba-shops/${citySlug}?${params.toString()}`
+    return `${basePath || `/find-boba-shops/${citySlug}`}?${params.toString()}`
   }
   
   const pageNumbers = getPageNumbers()

@@ -2,7 +2,8 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { notFound } from 'next/navigation'
-import { getShopsByCity, getCities, getOpenStatus, getAvailableAttributeGroups, shopHasAttribute, FILTER_ATTRIBUTES, Shop } from '@/utils/data'
+import { getShopsByCity, getCities, getOpenStatus, getAvailableAttributeGroups, shopHasAttribute, FILTER_ATTRIBUTES, Shop, getBoroughCounts, createSlug, MIN_BOROUGH_SHOP_COUNT } from '@/utils/data'
+import Link from 'next/link'
 import ShopCard from '@/components/ShopCard'
 import CityFilterBar, { ActiveFilterChip } from '@/components/CityFilterBar'
 import CityMapView from '@/components/CityMapView'
@@ -184,6 +185,14 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   // Get all shops for this city with optional sorting
   const allShops = await getShopsByCity(city.name, searchParamsData?.sort || 'rating')
+
+  // NYC borough pages (SEO audit Priority 5, phase 1) - only linked once a
+  // borough clears MIN_BOROUGH_SHOP_COUNT, so a thin/empty borough (today
+  // that's Queens at 9 and Brooklyn at 1, plus Bronx/Staten Island at 0) is
+  // never surfaced here, only reachable by direct URL.
+  const boroughLinks = city.slug === 'new-york'
+    ? (await getBoroughCounts(city.name)).filter((b) => b.count >= MIN_BOROUGH_SHOP_COUNT)
+    : []
 
   const showSocialFilter = !SOCIAL_FILTER_EXCLUDED_CITIES.has(city.slug)
 
@@ -368,6 +377,24 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
               />
             </div>
           </div>
+
+          {boroughLinks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <span className="text-sm font-medium" style={{ color: 'var(--ink-muted)' }}>
+                Browse by borough:
+              </span>
+              {boroughLinks.map(({ borough, count }) => (
+                <Link
+                  key={borough}
+                  href={`/find-boba-shops/${city.slug}/${createSlug(borough)}`}
+                  className="text-sm font-medium px-3 py-1.5 rounded-control transition-colors duration-motion ease-motion focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--taro-deep)]"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--rule)', color: 'var(--ink)' }}
+                >
+                  {borough} ({count})
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
             <h2 className="text-2xl" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--ink)' }}>

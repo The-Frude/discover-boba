@@ -45,6 +45,7 @@ export interface Shop {
   owner_id?: string;
   updated_at?: string;
   google_business_status?: string;
+  borough?: string;
 }
 
 // Tags applied to every shop by extractTags() regardless of its actual
@@ -673,6 +674,42 @@ export async function getShopsByCity(cityName: string, sortBy = 'rating'): Promi
     console.error(`Error getting shops for ${cityName}:`, error);
     return [];
   }
+}
+
+// NYC borough pages (SEO audit Priority 5, phase 1) - the only metro with a
+// real sub-city breakdown today. `borough` is backfilled from ZIP code (see
+// scripts/backfill-nyc-boroughs.mjs) onto shops whose `city` is "New York";
+// every other city's shops leave this column null.
+export const NYC_BOROUGHS = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
+
+// A borough page with only a handful of shops is exactly the thin-content
+// problem this site already fixed once (see Priority 1 of the SEO audit) -
+// this is the floor a borough must clear to be linked from the city page,
+// included in the sitemap, and indexed. Below it, the page still exists
+// (reachable by direct URL, shows the real shops it has) but is noindexed
+// and unlinked until a future data refresh grows it past this line.
+export const MIN_BOROUGH_SHOP_COUNT = 15
+
+// Shops in `cityName` whose `borough` matches, in the same premium-first/
+// display-tier order getShopsByCity already applies.
+export async function getShopsByCityAndBorough(cityName: string, borough: string, sortBy = 'rating'): Promise<Shop[]> {
+  const shops = await getShopsByCity(cityName, sortBy)
+  return shops.filter((shop) => shop.borough === borough)
+}
+
+// Real (non-zero) borough shop counts for a city, in NYC_BOROUGHS order.
+// Used both to decide which boroughs get linked/indexed and to build the
+// city page's "Browse by borough" links.
+export async function getBoroughCounts(cityName: string): Promise<Array<{ borough: string; count: number }>> {
+  const shops = await getShopsByCity(cityName)
+  const counts = new Map<string, number>()
+  for (const shop of shops) {
+    if (!shop.borough) continue
+    counts.set(shop.borough, (counts.get(shop.borough) || 0) + 1)
+  }
+  return NYC_BOROUGHS
+    .filter((borough) => counts.has(borough))
+    .map((borough) => ({ borough, count: counts.get(borough)! }))
 }
 
 // Display-order priority for city listings: 0 = real description + working

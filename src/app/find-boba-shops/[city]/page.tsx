@@ -8,7 +8,7 @@ import ShopCard from '@/components/ShopCard'
 import CityFilterBar, { ActiveFilterChip } from '@/components/CityFilterBar'
 import CityMapView from '@/components/CityMapView'
 import Pagination from '@/components/Pagination'
-import OptimizedImage from '@/components/OptimizedImage'
+import Image from 'next/image'
 import JumpToMapButton from '@/components/JumpToMapButton'
 import JsonLd from '@/components/JsonLd'
 import Breadcrumbs from '@/components/Breadcrumbs'
@@ -322,11 +322,12 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       {/* Hero Section */}
       <section className="relative h-[40vh] min-h-[300px] flex items-center justify-center">
         <div className="absolute inset-0 z-0">
-          <OptimizedImage
+          <Image
             src={city.image || "/images/boba-cat.jpeg"}
             alt={`${city.name} Boba Shops`}
             fill
             priority
+            unoptimized
             className="object-cover"
             sizes="100vw"
           />

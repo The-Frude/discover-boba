@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getShopBySlug, getShopsByCity, getAllTags, formatWorkingHours, getOpenStatus, isPermanentlyClosed, parseOpeningHoursSpec, GENERIC_TAGS, createSlug } from '@/utils/data'
-import OptimizedImage from '@/components/OptimizedImage'
+import Image from 'next/image'
 import ShopCard from '@/components/ShopCard'
 import ReviewsSection from '@/components/ReviewsSection'
 import JsonLd from '@/components/JsonLd'
@@ -328,7 +328,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
             hero-scale generated tile would read as a placeholder. */}
         {shop.photos && shop.photos.length > 0 && (
           <div className="relative w-full h-56 md:h-72 rounded-card overflow-hidden mb-5">
-            <OptimizedImage
+            <Image
               src={shop.photos[0]}
               alt={shop.name}
               fill

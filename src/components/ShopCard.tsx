@@ -20,7 +20,7 @@ export default function ShopCard({ shop }: ShopCardProps) {
 
   const pills = PILL_TAGS.filter((tag) => shop.tags.includes(tag)).slice(0, 2)
   const openStatus = getOpenStatus(shop)
-  const photo = shop.photos && shop.photos.length > 0 ? shop.photos[0] : null
+  const photo = shop.photo_thumb_url || (shop.photos && shop.photos.length > 0 ? shop.photos[0] : null)
 
   return (
     <div

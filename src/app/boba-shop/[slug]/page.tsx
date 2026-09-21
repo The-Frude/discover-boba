@@ -236,7 +236,8 @@ export default async function ShopPage({ params }: ShopPageProps) {
     },
   }
   if (shop.formatted_phone_number) localBusinessJsonLd.telephone = shop.formatted_phone_number
-  if (shop.photos && shop.photos.length > 0) localBusinessJsonLd.image = shop.photos[0]
+  const jsonLdImage = shop.photo_hero_url || (shop.photos && shop.photos.length > 0 ? shop.photos[0] : null)
+  if (jsonLdImage) localBusinessJsonLd.image = jsonLdImage
   const openingHoursSpec = parseOpeningHoursSpec(hours)
   if (openingHoursSpec.length > 0) localBusinessJsonLd.openingHoursSpecification = openingHoursSpec
   // Never emit a rating with a zero review count - matches the Priority 2 fix.
@@ -326,17 +327,20 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
         {/* Header block - no hero image unless a real photo exists; a
             hero-scale generated tile would read as a placeholder. */}
-        {shop.photos && shop.photos.length > 0 && (
+        {(shop.photo_hero_url || (shop.photos && shop.photos.length > 0)) && (
           <div className="relative w-full h-56 md:h-72 rounded-card overflow-hidden mb-5">
             <Image
-              src={shop.photos[0]}
+              src={shop.photo_hero_url || shop.photos![0]}
               alt={shop.name}
               fill
               priority
-              // TEMPORARY (2026-09-21): Vercel's image-transformation quota
-              // is exhausted account-wide (every remote transform 402s
-              // right now) - unoptimized bypasses the optimizer so this
-              // renders. Revert once the quota resets or plan is upgraded.
+              // Vercel's per-request image optimizer has a limited quota
+              // that's already been exhausted twice by this catalog's size
+              // (see docs - 2026-09-21 incident). photo_hero_url is a
+              // pre-sized WebP from scripts/backfill-photo-variants.mjs and
+              // should stay unoptimized permanently - it's already the
+              // right size. Shops not yet backfilled fall back to the raw
+              // Google URL, also unoptimized, until the next backfill run.
               unoptimized
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 768px"

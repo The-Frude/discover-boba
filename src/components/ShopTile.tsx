@@ -142,15 +142,10 @@ export default function ShopTile({ id, imageUrl, alt, className, aspectClassName
           alt={alt}
           fill
           priority={priority}
-          // TEMPORARY (2026-09-21): Vercel's image-transformation quota is
-          // exhausted account-wide - every remote transform 402s right now,
-          // cached or not (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED), which
-          // was breaking shop photos across every city page. Serving every
-          // src unoptimized (local city files AND remote Google photos)
-          // bypasses Vercel's optimizer entirely so images actually load.
-          // Revert to `imageUrl.startsWith('/')` once the quota resets or
-          // the plan is upgraded, to get resizing/WebP back for shop photos.
-          unoptimized
+          // Local files (city photos under /public/images) don't need
+          // Vercel's paid optimizer - they're already a fixed, pre-sized
+          // set. Only remote (Google Photos) shop images go through it.
+          unoptimized={imageUrl.startsWith('/')}
           sizes={sizes ?? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
           className="object-cover"
         />

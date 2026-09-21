@@ -3,14 +3,21 @@ name: Monthly Shop Data Refresh
 # Refreshes rating/review-count/business-status for every shop from Google
 # Places API (New), writing straight to the live columns (no staging/review
 # step - see scripts/monthly-refresh-shop-data.mjs for why that's safe for
-# a recurring job). Does NOT touch photos; that's a separate, manually-run
-# backfill (scripts/backfill-missing-photos.mjs).
+# a recurring job). Also (re)generates self-hosted WebP photo variants for
+# any shop that has a photo but no variants yet (scripts/backfill-photo-
+# variants.mjs is incremental - a no-op for shops already done, see the
+# 2026-09-21 image-transformation-quota incident for why these are
+# self-hosted instead of routed through Vercel's optimizer). Neither step
+# fetches a NEW photo for a shop with a missing/broken one - that's still
+# the separate, manually-run scripts/backfill-missing-photos.mjs.
 #
 # Requires two repo secrets not already used by ci-cd.yml:
 #   DATABASE_URL          - direct Postgres connection string (Supabase)
 #   GOOGLE_PLACES_API_KEY - same key used for the one-time refreshes
 # Add both under Settings > Secrets and variables > Actions before the
 # first scheduled run, or `workflow_dispatch` will fail the same way.
+# (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY, needed by the photo-
+# variants step, already exist as repo secrets - see ci-cd.yml.)
 
 on:
   schedule:
@@ -40,3 +47,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+
+      - name: Generate missing photo variants
+        run: node scripts/backfill-photo-variants.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

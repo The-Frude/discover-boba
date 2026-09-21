@@ -21,6 +21,8 @@ export interface Shop {
   };
   working_hours?: any;
   photos?: string[];
+  photo_thumb_url?: string;
+  photo_hero_url?: string;
   tags: string[];
   slug: string;
   email?: string;

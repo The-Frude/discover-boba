@@ -20,6 +20,8 @@
     "refresh:shop-data": "node scripts/monthly-refresh-shop-data.mjs",
     "backfill:missing-photos:dry-run": "node scripts/backfill-missing-photos.mjs --dry-run",
     "backfill:missing-photos": "node scripts/backfill-missing-photos.mjs",
+    "backfill:photo-variants:dry-run": "node scripts/backfill-photo-variants.mjs --dry-run",
+    "backfill:photo-variants": "node scripts/backfill-photo-variants.mjs",
     "migrate:reviews": "node scripts/migrate-reviews.mjs",
     "migrate:validate": "node scripts/validate-migration.mjs",
     "migrate:rollback": "node scripts/rollback-migration.mjs",

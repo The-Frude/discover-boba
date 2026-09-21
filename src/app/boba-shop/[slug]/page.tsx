@@ -333,6 +333,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
               alt={shop.name}
               fill
               priority
+              // TEMPORARY (2026-09-21): Vercel's image-transformation quota
+              // is exhausted account-wide (every remote transform 402s
+              // right now) - unoptimized bypasses the optimizer so this
+              // renders. Revert once the quota resets or plan is upgraded.
+              unoptimized
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 768px"
             />

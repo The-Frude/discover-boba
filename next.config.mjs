@@ -54,14 +54,8 @@ const nextConfig = {
         hostname: 'streetviewpixels-pa.googleapis.com',
       }
     ],
-    // Trimmed from the Next.js defaults (7 deviceSizes + 8 imageSizes = 15
-    // possible width buckets per photo) down to what the site actually
-    // renders - shop hero caps at 768px, cards top out around 33vw on a
-    // wide desktop (~640px). Fewer buckets means fewer distinct billed
-    // transformations per photo across an 811-shop catalog; see the
-    // 2026-09-21 image-transformation-quota incident.
-    deviceSizes: [640, 828, 1080, 1920],
-    imageSizes: [96, 256],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
     // Shop/city photos only change via infrequent backfill runs, not
     // per-request - a long TTL means repeat visits are served from

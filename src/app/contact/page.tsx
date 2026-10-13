@@ -46,7 +46,7 @@ export default function ContactPage() {
               <ContactForm />
             </div>
             
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
                 <div className="flex justify-center mb-4">
                   <svg className="h-10 w-10 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
